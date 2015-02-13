@@ -1,0 +1,566 @@
+<html>
+<head>
+<title>DCCN Torque/Maui Cluster Monitor</title>
+<!-- <link rel='stylesheet' href='http://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css'> -->
+<link rel='stylesheet' href='http://code.jquery.com/ui/1.10.4/themes/redmond/jquery-ui.css'>
+<link rel="stylesheet" href="css/colorbox.css" />
+<link rel="stylesheet" href="css/torquemon.css" />
+<!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script> -->
+<script type='text/javascript' src='http://code.jquery.com/jquery-1.10.2.js'></script>
+<script type='text/javascript' src='http://code.jquery.com/ui/1.10.4/jquery-ui.js'></script>
+<script type='text/javascript' src='js/jquery.colorbox.js'></script>
+<script type='text/javascript' src='js/moment.min.js'></script>
+<script type='text/javascript' src='js/util.js'></script>
+<script type='text/javascript' src='https://www.google.com/jsapi'></script>
+<script type='text/javascript'>
+    google.load('visualization', '1', {packages:['corechart','table','controls']});
+</script>
+<script type='text/javascript'>
+
+    /** global variables **/
+    var accounting_data;
+
+    /** visualization for accounting **/
+    function visual_accounting( panel, fobj ) {
+
+        accounting_data = new google.visualization.DataTable();
+       
+        accounting_data.addColumn('string'  , 'User');
+        accounting_data.addColumn('string'  , 'User');
+        accounting_data.addColumn('string'  , 'Group');
+        accounting_data.addColumn('number'  , 'Number of matlab jobs');
+        accounting_data.addColumn('number'  , 'Number of batch jobs');
+        accounting_data.addColumn('number'  , 'Number of interactive jobs');
+        accounting_data.addColumn('number'  , 'Number of vgl jobs');
+        accounting_data.addColumn('number'  , '<font style="text-align:right;"> Number of jobs [ m / b / i / v ]</font>');
+
+        for (var i=0; i < 5; i++ ) {   // corresponding to ['total','matlab','batch','interactive','vgl']
+            accounting_data.addColumn('number'  , 'Req. walltime (success)');
+            accounting_data.addColumn('number'  , 'Req. walltime (failed)');
+            accounting_data.addColumn('number'  , 'Req. walltime (killed)');
+            accounting_data.addColumn('number'  , 'Req. walltime (total)');
+            accounting_data.addColumn('number'  , 'Req. walltime in hrs. [ '          +
+                                                  '<font class="success">s</font> / ' +
+                                                  '<font class="failed">f</font>  / ' +
+                                                  '<font class="killed">k</font>  ] ');
+ 
+            accounting_data.addColumn('number'  , 'Used walltime (success)');
+            accounting_data.addColumn('number'  , 'Used walltime (failed)');
+            accounting_data.addColumn('number'  , 'Used walltime (killed)');
+            accounting_data.addColumn('number'  , 'Used walltime (total)');
+            accounting_data.addColumn('number'  , 'Used walltime in hrs. [ '          +
+                                                  '<font class="success">s</font> / ' +
+                                                  '<font class="failed">f</font>  / ' +
+                                                  '<font class="killed">k</font>  ] ');
+
+            accounting_data.addColumn('number'  , 'Used cputime (success)');
+            accounting_data.addColumn('number'  , 'Used cputime (failed)');
+            accounting_data.addColumn('number'  , 'Used cputime (killed)');
+            accounting_data.addColumn('number'  , 'Used cputime (total)');
+            accounting_data.addColumn('number'  , 'Used cputime in hrs. [ '          +
+                                                  '<font class="success">s</font> / ' +
+                                                  '<font class="failed">f</font>  / ' +
+                                                  '<font class="killed">k</font>  ] ');
+        }
+
+        var beg_timestamp = fobj.from;
+        var end_timestamp = fobj.to;
+        var obj           = fobj.data;
+
+        var c_queues = ['matlab','batch','inter','vgl'];
+
+        for (var i=0; i<obj.length; i++ ) {
+
+            var d = [ obj[i].uid, obj[i].uid, obj[i].gid ]
+
+            // number of jobs per queue
+            var nj_t = 0;
+            for (var j=0; j < c_queues.length; j++) {
+                d.push( obj[i][c_queues[j]].nj ); 
+                nj_t += obj[i][c_queues[j]].nj;
+            }
+            d.push( nj_t );
+
+            // requested and consumed walltime
+            var rwt_s_t = 0;
+            var rwt_f_t = 0;
+            var rwt_k_t = 0;
+            var rwt_t   = 0;
+            var cwt_s_t = 0;
+            var cwt_f_t = 0;
+            var cwt_k_t = 0;
+            var cwt_t   = 0;
+            var cct_s_t = 0;
+            var cct_f_t = 0;
+            var cct_k_t = 0;
+            var cct_t   = 0;
+            for (var j=0; j < c_queues.length; j++) {
+                d.push( obj[i][c_queues[j]].rwt_s ); 
+                d.push( obj[i][c_queues[j]].rwt_f ); 
+                d.push( obj[i][c_queues[j]].rwt_k );
+                d.push( obj[i][c_queues[j]].rwt_s + obj[i][c_queues[j]].rwt_f + obj[i][c_queues[j]].rwt_k );
+                d.push( obj[i][c_queues[j]].rwt_s + obj[i][c_queues[j]].rwt_f + obj[i][c_queues[j]].rwt_k );
+
+                rwt_s_t += obj[i][c_queues[j]].rwt_s;
+                rwt_f_t += obj[i][c_queues[j]].rwt_f;
+                rwt_k_t += obj[i][c_queues[j]].rwt_k;
+                rwt_t   += obj[i][c_queues[j]].rwt_s + obj[i][c_queues[j]].rwt_f + obj[i][c_queues[j]].rwt_k;
+
+                d.push( obj[i][c_queues[j]].cwt_s ); 
+                d.push( obj[i][c_queues[j]].cwt_f ); 
+                d.push( obj[i][c_queues[j]].cwt_k );
+                d.push( obj[i][c_queues[j]].cwt_s + obj[i][c_queues[j]].cwt_f + obj[i][c_queues[j]].cwt_k );
+                d.push( obj[i][c_queues[j]].cwt_s + obj[i][c_queues[j]].cwt_f + obj[i][c_queues[j]].cwt_k );
+
+                cwt_s_t += obj[i][c_queues[j]].cwt_s;
+                cwt_f_t += obj[i][c_queues[j]].cwt_f;
+                cwt_k_t += obj[i][c_queues[j]].cwt_k;
+                cwt_t   += obj[i][c_queues[j]].cwt_s + obj[i][c_queues[j]].cwt_f + obj[i][c_queues[j]].cwt_k;
+
+                d.push( obj[i][c_queues[j]].cct_s ); 
+                d.push( obj[i][c_queues[j]].cct_f ); 
+                d.push( obj[i][c_queues[j]].cct_k );
+                d.push( obj[i][c_queues[j]].cct_s + obj[i][c_queues[j]].cct_f + obj[i][c_queues[j]].cct_k );
+                d.push( obj[i][c_queues[j]].cct_s + obj[i][c_queues[j]].cct_f + obj[i][c_queues[j]].cct_k );
+
+                cct_s_t += obj[i][c_queues[j]].cct_s;
+                cct_f_t += obj[i][c_queues[j]].cct_f;
+                cct_k_t += obj[i][c_queues[j]].cct_k;
+                cct_t   += obj[i][c_queues[j]].cct_s + obj[i][c_queues[j]].cct_f + obj[i][c_queues[j]].cct_k;
+            }
+         
+            // total sum 
+            d.push( rwt_s_t ); 
+            d.push( rwt_f_t ); 
+            d.push( rwt_k_t );
+            d.push( rwt_t );
+            d.push( rwt_t );
+            d.push( cwt_s_t ); 
+            d.push( cwt_f_t ); 
+            d.push( cwt_k_t );
+            d.push( cwt_t );
+            d.push( cwt_t );
+            d.push( cct_s_t ); 
+            d.push( cct_f_t ); 
+            d.push( cct_k_t );
+            d.push( cct_t );
+            d.push( cct_t );
+
+            accounting_data.addRow(d);
+        }
+
+        // information about time period range
+        if ( obj.length > 0 ) {
+            var dtstr_opts = { weekday: "long",
+                               year   : "numeric",
+                               month  : "short",
+                               day    : "numeric"};
+
+            $("#info_general").html('From: <font class="date">' + moment(beg_timestamp*1000).format('D MMMM YYYY') + '</font>' +
+                                    '  To: <font class="date">' + moment(end_timestamp*1000).format('D MMMM YYYY') + '</font>');
+            $("#info_general").hide();
+        }
+
+        // formatters
+        var uid_formatter = new google.visualization.PatternFormat('<a id="u_acc" href="#" onclick=loadAccountingUser("{0}");>{0}</a>');
+        uid_formatter.format(accounting_data, [0], 0);
+
+        var wt_formatter = new google.visualization.NumberFormat({pattern: '##,###.#'});
+
+        for (var i=7; i < accounting_data.getNumberOfColumns(); i++) {
+            wt_formatter.format(accounting_data, i);
+        }
+
+        //var bar_formatter = new google.visualization.BarFormat({showValue:false, colorPositive:'green'});
+
+        var pat_formatter_nj = new google.visualization.PatternFormat('{0} [ {1} / {2} / {3} / {4} ]');
+        pat_formatter_nj.format(accounting_data,  [7,3,4,5,6], 7);
+
+        var pat_formatter_wt = new google.visualization.PatternFormat('{0} ' + '[ <font class="success">{1}</font>' + ' / ' + 
+                                                                               '<font class="failed">{2}</font>'    + ' / ' +
+                                                                               '<font class="killed">{3}</font> ]');
+
+        for (var i=8; i < accounting_data.getNumberOfColumns(); i+=5) { 
+            pat_formatter_wt.format(accounting_data,  [i+3, i, i+1, i+2], i+4);
+        }
+
+        /* DataView for table */ 
+        var tab_view = new google.visualization.DataView(accounting_data);
+        tab_view.setColumns([0, 1, 2, 7, 7+(15*c_queues.length)+5, 7+(15*c_queues.length)+10, 7+(15*c_queues.length)+15, 7+(15*c_queues.length)+9, 7+(15*c_queues.length)+14 ]);
+        markTopThree( tab_view, 3 );
+        markTopThree( tab_view, 5 );
+        markTopThree( tab_view, 6 );
+
+        /* table of the latest cluster status */
+        var table = new google.visualization.ChartWrapper({ 'chartType'  : 'Table',
+                                                            'containerId': 'data_table',
+                                                            'view'       : {'columns': [0, 2, 3, 4, 5, 6]},
+                                                            'options': {'title'        : 'Accounting: ',
+                                                                        'width'        : 1200,
+                                                                        'showRowNumber': true,
+                                                                        'allowHtml'    : true}
+                                                          });
+
+        var user_cwt_pie = new google.visualization.ChartWrapper({ 'chartType'  : 'PieChart',
+                                                                   'containerId': 'user_cwt_pie',
+                                                                   'view'       : {'columns': [1, 7]},
+                                                                   'options'    : {'allowHtml': true,
+                                                                                   'title':'Used walltime by user',
+                                                                                   'sliceVisibilityThreshold': 1/100,
+                                                                                   'chartArea':{left:0,bottom:0,width:"100%",height:"80%"}}
+                                                                 });
+
+        var user_cct_pie = new google.visualization.ChartWrapper({ 'chartType'  : 'PieChart',
+                                                                   'containerId': 'user_cct_pie',
+                                                                   'view'       : {'columns': [1, 8]},
+                                                                   'options'    : {'allowHtml': true,
+                                                                                   'title':'Used cputime by user',
+                                                                                   'sliceVisibilityThreshold': 1/100,
+                                                                                   'chartArea':{left:0,bottom:0,width:"100%",height:"80%"}}
+                                                                 });
+
+        var group_cwt_pie = new google.visualization.ChartWrapper({ 'chartType'  : 'PieChart',
+                                                                    'containerId': 'group_cwt_pie',
+                                                                    'view'       : {'columns': [0, 1]},
+                                                                    'options'    : {'allowHtml': true,
+                                                                                    'title':'Used walltime by group',
+                                                                                    'sliceVisibilityThreshold': 1/100,
+                                                                                    'chartArea':{left:0,bottom:0,width:"100%",height:"80%"}}
+                                                                  });
+
+        var group_cct_pie = new google.visualization.ChartWrapper({ 'chartType'  : 'PieChart',
+                                                                    'containerId': 'group_cct_pie',
+                                                                    'view'       : {'columns': [0, 2]},
+                                                                    'options'    : {'allowHtml': true,
+                                                                                    'title':'Used cputime by group',
+                                                                                    'sliceVisibilityThreshold': 1/100,
+                                                                                    'chartArea':{left:0,bottom:0,width:"100%",height:"80%"}}
+                                                                  });
+
+        var user_filter = new google.visualization.ControlWrapper({ 'controlType': 'CategoryFilter', 
+                                                                     'containerId': 'user_filter', 
+                                                                     'options': { 'filterColumnLabel': 'User', 
+                                                                                  'ui': { 'allowMultiple': false }
+                                                                                }
+                                                                   });
+
+        var group_filter = new google.visualization.ControlWrapper({ 'controlType': 'CategoryFilter', 
+                                                                     'containerId': 'group_filter', 
+                                                                     'options': { 'filterColumnLabel': 'Group', 
+                                                                                  'ui': { 'allowMultiple': false }
+                                                                                }
+                                                                   });
+
+        /* callback function for table row selection */
+        function getDisplayedRows() {
+
+            var _rows = [];
+
+            var sel_user  = user_filter.getState();
+            var sel_group = group_filter.getState();
+
+            var _sel = [];
+            if (sel_user.selectedValues.length > 0) {
+                _sel.push( {'column': 1, 'value': sel_user.selectedValues[0]} );
+            }
+
+            if (sel_group.selectedValues.length > 0) {
+                _sel.push( {'column': 2, 'value': sel_group.selectedValues[0]} );
+            }
+
+            if ( _sel.length > 0 ) {
+                _rows = tab_view.getFilteredRows( _sel );
+            } else {
+                _rows = tab_view.getViewRows();
+            }
+
+            return _rows;
+        }
+
+        google.visualization.events.addListener(table, 'select', function() {
+            
+            // rtrieve rows in current display 
+            var _rows = getDisplayedRows();
+
+            // rtrieve rows in current view 
+            var _vrows = tab_view.getViewRows();
+
+            // get the selected item 
+            var selectedItem = table.getChart().getSelection()[0];
+
+            if (selectedItem) {
+
+                var uid;
+                var gid;
+
+                if ( _rows.length < _vrows.length ) {
+                    uid = tab_view.getValue(_rows[selectedItem.row], 1);
+                    gid = tab_view.getValue(_rows[selectedItem.row], 2);
+
+                } else {
+                    uid = accounting_data.getValue(_rows[selectedItem.row], 1);
+                    gid = accounting_data.getValue(_rows[selectedItem.row], 2);
+                }
+
+                console.log( 'select ' + uid + ' ' + gid );
+
+                // select the relevant parts in pie charts
+                var m_rows = user_cwt_pie.getDataTable().getFilteredRows([{'column':0, 'value':uid}]);
+                if ( m_rows.length > 0 ) user_cwt_pie.getChart().setSelection([{'row':m_rows[0]}])
+
+                m_rows = user_cct_pie.getDataTable().getFilteredRows([{'column':0, 'value':uid}]);
+                if ( m_rows.length > 0 ) user_cct_pie.getChart().setSelection([{'row':m_rows[0]}])
+
+                m_rows = group_cwt_pie.getDataTable().getFilteredRows([{'column':0, 'value':gid}]);
+                if ( m_rows.length > 0 ) group_cwt_pie.getChart().setSelection([{'row':m_rows[0]}])
+
+                m_rows = group_cct_pie.getDataTable().getFilteredRows([{'column':0, 'value':gid}]);
+                if ( m_rows.length > 0 ) group_cct_pie.getChart().setSelection([{'row':m_rows[0]}])
+            } else {
+                console.log( 'nothing selected' );
+            }
+        });
+
+        /* callback functions for filters */
+        function refreshPieCharts() {
+
+            // retrieve rows in current display 
+            var _rows = getDisplayedRows();
+
+            // rtrieve rows in tab_view sorted by cwt_total  
+            var idx_sorted = tab_view.getSortedRows( {'column': 5, 'desc': true} )
+
+            /* pie chart DataView on top of the current tab_view */ 
+            var pie_view = new google.visualization.DataView( tab_view );
+
+            if ( _rows.length != idx_sorted.length ) {
+                // some filters are applied, apply the sorting to the filtered rows
+
+                var idx_sorted_filtered = [];
+
+                for ( var i=0; i<idx_sorted.length; i++ ) {
+                   if ( $.inArray( idx_sorted[i],  _rows ) >= 0 ) idx_sorted_filtered.push( idx_sorted[i] ); 
+                }
+                pie_view.setRows( idx_sorted_filtered );
+            } else {
+                // no filter is applied, simply use the sorted rows
+                pie_view.setRows( idx_sorted );
+            }
+
+            // create a new view in which data in the pie_view are summarized by user groups
+            var dt = pie_view.toDataTable();
+            var grp_rules = [ {'column'     : dt.getNumberOfColumns()-2,
+                               'aggregation': google.visualization.data.sum,
+                               'type'       : 'number'},
+                              {'column'     : dt.getNumberOfColumns()-1,
+                               'aggregation': google.visualization.data.sum,
+                               'type'       : 'number'},
+                            ];
+
+            var grp_dt = google.visualization.data.group(dt, [2], grp_rules );
+
+            wt_formatter.format(grp_dt, 1);
+            wt_formatter.format(grp_dt, 2);
+
+            var group_pie_view = new google.visualization.DataView( grp_dt );
+
+            group_pie_view.setRows( group_pie_view.getSortedRows( {'column': 1, 'desc':true} ) );
+
+            // re-arrange data in current view into PieChart
+            user_cwt_pie.setDataTable( pie_view );
+            user_cwt_pie.draw();
+
+            user_cct_pie.setDataTable( pie_view );
+            user_cct_pie.draw();
+
+            group_cwt_pie.setDataTable( group_pie_view );
+            group_cwt_pie.draw();
+
+            group_cct_pie.setDataTable( group_pie_view );
+            group_cct_pie.draw();
+
+        }
+
+        /* dashboard */
+        var tab_dboard = new google.visualization.Dashboard( document.getElementById("accounting_dashboard"));
+
+        google.visualization.events.addListener(tab_dboard, 'ready', function() {
+            panel.find('.loading').hide();
+            $("#info_general").show();
+            $("#queue_selector").show();
+            refreshPieCharts();
+        });
+
+        tab_dboard.bind(group_filter,user_filter).bind(user_filter, table);
+        tab_dboard.draw(tab_view);
+
+        /* manual style customization */
+        /*
+        var c_widths = [ { 'title': 'Node'       , 'width': '80px' },
+                         { 'title': 'CPU'        , 'width': '80px' },
+                         { 'title': 'Network'    , 'width': '80px' },
+                         { 'title': 'Free cores' , 'width': '150px' },
+                         { 'title': 'Free memory', 'width': '150px' },
+                         { 'title': 'Interactive', 'width': '80px' },
+                         { 'title': 'Matlab'     , 'width': '80px' },
+                         { 'title': 'VGL'        , 'width': '80px' },
+                         { 'title': 'Batch'      , 'width': '80px' } ];
+
+        for (var i=0; i < c_widths.length; i++) {
+            $('.google-visualization-table-th:contains(' + c_widths[i].title + ')').css('width', c_widths[i].width );
+        }
+        */
+
+        // node function selector 
+        $("#queue_selector").change( function() {
+            func_cols = {"matlab":3, "batch":4, "interactive":5, "vgl":6};
+
+            console.log('selected value: ' + $(this).val());
+        
+            if ( $(this).val() == "all" ) {
+                tab_view.setRows( 0, accounting_data.getNumberOfRows()-1 );
+                tab_view.setColumns([0, 1, 2, 7, 7+(15*c_queues.length)+5, 7+(15*c_queues.length)+10, 7+(15*c_queues.length)+15, 7+(15*c_queues.length)+9, 7+(15*c_queues.length)+14 ]);
+                markTopThree( tab_view, 3 );
+                markTopThree( tab_view, 5 );
+                markTopThree( tab_view, 6 );
+            } else {
+                var c_idx = func_cols[$(this).val()];
+                filter = [{"column": c_idx, "minValue": 1}];
+                tab_view.setRows( accounting_data.getFilteredRows(filter) );
+                tab_view.setColumns([0, 1, 2, c_idx, 7+15*(c_idx-3)+5, 7+15*(c_idx-3)+10, 7+15*(c_idx-3)+15, 7+15*(c_idx-3)+9, 7+15*(c_idx-3)+14]);
+                markTopThree( tab_view, 3 );
+                markTopThree( tab_view, 5 );
+                markTopThree( tab_view, 6 );
+            }
+
+            tab_dboard.draw( tab_view );
+        });
+    }
+
+    function markTopThree( tab_view, idx_col ) {
+        idx_row = tab_view.getSortedRows( {'column': idx_col, 'desc': true} )[0];
+        console.log("The highest row id is: " + idx_row);
+
+        t_idx_col = tab_view.getTableColumnIndex( idx_col );
+        t_idx_row = tab_view.getTableRowIndex( idx_row );
+
+        console.log("The highest cell in DataView  is: (" +   idx_row + ", " +   idx_col + ")");
+        console.log("The highest cell in DataTable is: (" + t_idx_row + ", " + t_idx_col + ")");
+
+        // pre-emptify DataTable properties
+        for (var i=0; i < accounting_data.getNumberOfRows(); i++ ) {
+            accounting_data.setProperties(i, t_idx_col, {});
+        } 
+
+        // set explicit DataTable properties
+        accounting_data.setProperties(t_idx_row, t_idx_col, {'className': 'highest'});
+    }
+
+    /* actual function loading and visualizing accounting */ 
+    function loadAccounting(panel) {
+
+        panel.find('.loading').show();
+
+        var jqx = $.getJSON( "cgi-bin/get_accounting.py?period=60", function( data ) {
+            visual_accounting(panel, $.parseJSON( data ) );
+        });
+    }
+
+    function loadAccountingUser(uid) {
+
+        var queue = $("#queue_selector").val();
+
+        $.colorbox({href   : "accounting_user.html?uid="+uid+"&queue="+queue,
+                    iframe : true,
+                    width  : "80%",
+                    height : "80%",
+                    fixed  : true });
+    }
+
+    /* dummy function mimicing animation before and after the loading and visualization */ 
+    function loadDummy(panel) {
+        panel.find('.loading').show();
+        setTimeout( function() { panel.find('.loading').hide(); }, 5000 );
+    }
+
+    /* wrapper function for drawing tabs */ 
+    function loadTab(idx, panel) {
+        switch(idx) {
+            case 0:   // cluster status
+                if ( ! accounting_data ) loadAccounting(panel);
+                break;
+
+            default:
+                loadDummy(panel);
+                break; 
+        }
+    }
+
+    /* main action when document is fully loaded */
+    google.setOnLoadCallback( function() {
+        $(document).ready( function() {
+
+            // display tabs
+            $("#tabs").tabs({active  : 0,
+                             create  : function(event, ui) { loadTab(ui.tab.index(), ui.panel); },
+                             activate: function(event, ui) { loadTab(ui.newTab.index(), ui.newPanel); }});
+
+            // enabling autorefresh
+            //setInterval( function() { location.reload(true); }, 600000); 
+        });
+    });
+</script>
+</head>
+<body>
+<div id="tabs">
+  
+  <!-- define the tabs -->
+  <ul>
+    <li><a href="#accounting_dashboard">Accounting</a></li>
+  </ul>
+
+  <!-- tab content for cluster status -->
+  <div id="accounting_dashboard" style="width:1200px;">
+    <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+    <table style="border-width:0px;">
+      <tr>
+      <td id="info_general" colspan="3" style="border-width:0px; padding:10px"></td>
+      </tr>
+      <tr>
+      <td id="group_filter" style="border-width:0px; padding:10px"></td>
+      <td id="user_filter"  style="border-width:0px; padding:10px"></td>
+      <td id="queue_filter" style="border-width:0px; padding:10px">
+          <select id="queue_selector" style="display:none;">
+          <option value="all">All</option>
+          <option value="interactive">Interactive</option>
+          <option value="matlab">Matlab</option>
+          <option value="vgl">VirtualGL</option>
+          <option value="batch">Batch</option>
+          </select>
+      </td>
+      </tr>
+    </table>
+    <table style="border-width:0px;">
+      <tr>
+      <td style="border-width:0px; padding:10px">
+          <div id="group_cwt_pie"   style="width:580px;"></div>
+      </td>
+      <td style="border-width:0px; padding:10px">
+          <div id="user_cwt_pie"   style="width:580px;"></div>
+      </td>
+      </tr>
+      <tr>
+      <td style="border-width:0px; padding:10px">
+          <div id="group_cct_pie"   style="width:580px;"></div>
+      </td>
+      <td style="border-width:0px; padding:10px">
+          <div id="user_cct_pie"   style="width:580px;"></div>
+      </td>
+      </tr>
+    </table>
+    <div id="data_table"   style="width:1200px;"></div>
+  </div>
+
+</div>
+</body>
+</html>

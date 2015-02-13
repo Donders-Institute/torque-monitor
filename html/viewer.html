@@ -1,0 +1,845 @@
+<html>
+<head>
+<title>DCCN Torque/Maui Cluster Monitor</title>
+<link rel='stylesheet' href='http://code.jquery.com/ui/1.10.4/themes/redmond/jquery-ui.css'>
+<link rel="stylesheet" href="css/colorbox.css" />
+<link rel="stylesheet" href="css/torquemon.css" />
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+<script type='text/javascript' src='http://code.jquery.com/jquery-1.10.2.js'></script>
+<script type='text/javascript' src='http://code.jquery.com/ui/1.10.4/jquery-ui.js'></script>
+<script type='text/javascript' src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+<script type='text/javascript' src='js/jquery.colorbox.js'></script>
+<script type='text/javascript' src='js/util.js'></script>
+<script type='text/javascript' src='https://www.google.com/jsapi'></script>
+<script type='text/javascript'>
+    google.load('visualization', '1', {packages:['corechart','table','controls']});
+</script>
+<script type='text/javascript'>
+
+    /** global variables **/
+    var hnode_status_data;
+    var cluster_status_data;
+    var cluster_util_data;
+    var job_eff_wtime_data;
+    var job_eff_mem_data;
+    var job_cpu_util_data;
+
+    /** error handler **/
+    function chartErrorHandler(err) {
+        alert('Error: ' + err['message']);
+    }
+
+    /* visualization of job efficiency history */
+    function visual_job_efficiency_history(panel, obj ) {
+
+        var d_eff_wtime = [];
+        var d_eff_mem   = [];
+        var d_cpu_util  = [];
+
+        var a_queue   = ['matlab','interactive','vgl','batch'];
+        var a_status  = ['csuccess','cfail','killed'];
+
+        for (var i=0; i<obj.length; i++ ) {
+            var d = [];
+            d.push( obj[i].timestamp );
+            for (var is in a_status) {
+                for (var iq in a_queue) {
+                    console.log(obj[i].data)
+                    var sel = obj[i].data.filter( function(o) { return o.queue == a_queue[iq] && o.status == a_status[is]; } );
+                    if (sel[0]) {
+                        console.log(a_status[is] + ' is ' + sel[0].status + ', ' + a_queue[iq] + ' is ' + sel[0].queue);
+                        d.push( sel[0].eff_wtime_min*100. );
+                        d.push((sel[0].eff_wtime_mean - sel[0].eff_wtime_std)*100.); 
+                        d.push((sel[0].eff_wtime_mean + sel[0].eff_wtime_std)*100.); 
+                        d.push( sel[0].eff_wtime_max*100. );
+                    } else {
+                        d.push( 0 );
+                        d.push( 0 ); 
+                        d.push( 0 ); 
+                        d.push( 0 );
+                        console.log('information for ' + a_queue[iq] + ":" + a_status[is] +
+                                    ' at ' + obj[i].timestamp + ' not found');
+                    }
+                }
+            }
+            console.log(d);
+            d_eff_wtime.push(d);
+        }
+
+        job_eff_wtime_data = google.visualization.arrayToDataTable( d_eff_wtime, true );
+
+        // column indices for specific data views 
+        var cols_csuccess = [0].concat( range( 4*a_queue.length*a_status.indexOf('csuccess')+1,
+                                               4*a_queue.length*a_status.indexOf('csuccess')+16 ) );
+
+        // data view for cfail
+
+        // data view for killed
+
+        // formatters
+        //var time_formatter = new google.visualization.DateFormat({pattern: "yy-MM-dd"});
+        //time_formatter.format(job_statistics_data, 0);
+
+        //var ratio_formatter = new google.visualization.NumberFormat({suffix: '%', fractionDigits: 1});
+        //for (var i=5; i<=16; i++ )  ratio_formatter.format(job_statistics_data, i);
+
+        // create and draw charts
+        var chrt_eff_wtime_csuccess = new google.visualization.ChartWrapper({'chartType'  : 'CandlestickChart',
+                                                                             'containerId': 'jstat_eff_wtime',
+                                                                             'options'    : {'width'    : 950,
+                                                                                             'height'   : 200,
+                                                                                             'chartArea': {'height':'75%', 'width':'80%'},
+                                                                                             'legend'   : {'position': 'top'},
+                                                                                             //'series'   : {0:{color: 'green'},
+                                                                                             //              1:{color: 'blue'},
+                                                                                             //              2:{color: 'yellow'},
+                                                                                             //              3:{color: 'red'}}
+                                                                                            },
+                                                                             'dataTable'   : job_eff_wtime_data,
+                                                                             'view'        : {'columns': [0,1,2,3,4]}
+                                                                            });
+        panel.find('.loading').hide();
+        chrt_eff_wtime_csuccess.draw();
+    }
+
+    /* visualization of cluster utilization history */
+    function visual_cluster_utilization_history(panel, obj ) {
+        cluster_util_data = new google.visualization.DataTable();
+        cluster_util_data.addColumn('datetime', 'Time');
+        cluster_util_data.addColumn('number'  , 'Total cores');
+        cluster_util_data.addColumn('number'  , 'Idling cores');
+        cluster_util_data.addColumn('number'  , 'Free memory/core');
+        cluster_util_data.addColumn('number'  , 'Requested memory');
+        cluster_util_data.addColumn('number'  , 'Requested walltime');
+        cluster_util_data.addColumn('number'  , 'Interactive');         // duplication of this column is by design
+        cluster_util_data.addColumn('number'  , 'Non-interactive');
+        cluster_util_data.addColumn('number'  , 'Running jobs');
+        cluster_util_data.addColumn('number'  , 'Queued jobs');
+        cluster_util_data.addColumn('number'  , 'Exiting jobs');
+        cluster_util_data.addColumn('number'  , 'Interactive');     // duplication of this column is by design
+        cluster_util_data.addColumn('number'  , 'Non-interactive');
+        cluster_util_data.addColumn('number'  , 'Idling cores');
+
+        var last_nonzero_ncores_total = 0;
+        for (var i=0; i<obj.length; i++ ) {
+            if ( obj[i].cores_total != 0 && obj[i].cores_total != last_nonzero_ncores_total ) {
+                last_nonzero_ncores_total = obj[i].cores_total;
+            }
+
+            var d = [];
+            
+            d.push(new Date(obj[i].timestamp * 1000)); 
+            d.push(obj[i].cores_total); 
+            d.push(obj[i].cores_idle); 
+            d.push(obj[i].memleft_pcores_all); 
+            d.push(obj[i].memreq_all); 
+            d.push(obj[i].wtreq_all); 
+            d.push(obj[i].njobs_inter); 
+            d.push(obj[i].njobs_noninter); 
+            d.push(obj[i].njobs_running); 
+            d.push(obj[i].njobs_queue);
+            d.push(obj[i].njobs_exiting);
+            d.push(100. * obj[i].njobs_inter    / last_nonzero_ncores_total);
+            d.push(100. * obj[i].njobs_noninter / last_nonzero_ncores_total);
+            d.push(100. * (last_nonzero_ncores_total - obj[i].njobs_running ) / last_nonzero_ncores_total);
+
+            cluster_util_data.addRow(d);
+        }
+
+        // formatters       
+        var time_formatter = new google.visualization.DateFormat({pattern: "yy-MM-dd HH:mm:ss"});
+        time_formatter.format(cluster_util_data, 0);
+
+        var ratio_formatter = new google.visualization.NumberFormat({suffix: '%', fractionDigits: 1});
+        ratio_formatter.format(cluster_util_data, 11);
+        ratio_formatter.format(cluster_util_data, 12);
+        ratio_formatter.format(cluster_util_data, 13);
+
+        /** cluster utilization history **/
+        var njobs_chart = new google.visualization.ChartWrapper({'chartType'  : 'ComboChart',
+                                                                 'containerId': 'njobs_chart',
+                                                                 'options'    : {'width'    : 950,
+                                                                                 'height'   : 200,
+                                                                                 'chartArea': {'height':'75%', 'width':'80%'},
+                                                                                 'legend'   : {'position': 'top'},
+                                                                                 'vAxis'    : {minValue: 0,
+                                                                                               title   : 'Job count'},
+                                                                                 'seriesType':'area',
+                                                                                 'series'   : {0:{color: 'green'  , visibleInLegend: true},
+                                                                                               1:{color: 'red'    , visibleInLegend: true},
+                                                                                               2:{color: '#FE642E', visibleInLegend: true},
+                                                                                               3:{color: 'blue'   , type: 'line', visibleInLegend: false}}
+                                                                                },
+                                                                 'view'       : {'columns': [0,8,9,10,1]},
+                                                                });
+
+        var nrjobs_chart = new google.visualization.ChartWrapper({'chartType' : 'AreaChart',
+                                                                 'containerId': 'nrjobs_chart',
+                                                                 'options'    : {'width'    : 950,
+                                                                                 'height'   : 200,
+                                                                                 'chartArea': {'height':'75%', 'width':'80%'},
+                                                                                 'legend'   : {'position': 'top'},
+                                                                                 'isStacked': true,
+                                                                                 'vAxis'    : {minValue: 0, maxValue:100, title: 'Ratio (%)'},
+                                                                                 //'seriesType':'area',
+                                                                                 'series'   : {0:{color: 'blue'  , visibleInLegend: true},
+                                                                                               1:{color: 'brown' , visibleInLegend: true},
+                                                                                               2:{color: 'green' , visibleInLegend: true}}
+                                                                                },
+                                                                 'view'       : {'columns': [0,11,12,13]},
+                                                                });
+
+        /* chart event handlers */
+        function njobsSelectHandler() {
+
+            var sel = njobs_chart.getChart().getSelection();
+            var dt  = njobs_chart.getDataTable();
+            var dv  = njobs_chart.getView();      // list gives the 'view' object in the created chart, i.e. {'columns': [0,8,9,10,1]}
+
+            var message = '';
+            for (var i = 0; i < sel.length; i++) {
+
+              var item = sel[i];
+
+              if (item.row != null && item.column != null) {
+                // a point is selected
+                message += '{data point: ' + dt.getValue(item.row, dv.columns[item.column]) + '}';
+              } else if (item.row != null) {                 
+                // this doesn't mean anything in linechart
+                message += '{data row:' + item.row + '}';
+              } else if (item.column != null) {               
+                // a whole column of data is selected
+                message += '{data column:' + dv.columns[item.column] + '}';
+              }
+            }
+
+            if (message == '') {
+              message = 'nothing';
+            }
+            alert('You selected ' + message);
+        }
+
+        google.visualization.events.addListener(njobs_chart , 'select', njobsSelectHandler);
+
+        /* filters */
+        var njobs_ctrl = new google.visualization.ControlWrapper({'controlType' : 'ChartRangeFilter',
+                                                                  'containerId' : 'njobs_ctrl',
+                                                                  'minRangeSize': 3600000,
+                                                                  'options'     : { 'filterColumnIndex' : 0,
+                                                                                    'ui': {'chartType'   : 'LineChart',
+                                                                                           'chartOptions': {'width'    : 950,
+                                                                                                            'height'   : 70,
+                                                                                                            'chartArea': {'height':'75%', 'width': '80%'},
+                                                                                                            //'series'   : {0:{color: 'green', visibleInLegend: false}},
+                                                                                                            'hAxis'    : {'baselineColor': 'none'}},
+                                                                                           'chartView'   : { 'columns': [0,1] }
+                                                                                          }
+                                                                                  }
+                                                                  });
+
+        //var njobs_dboard = new google.visualization.Dashboard( document.getElementById("njobs"));
+        var njobs_dboard = new google.visualization.Dashboard( document.getElementById("cluster_util_dashboard"));
+
+        google.visualization.events.addListener(njobs_dboard, 'ready', function() {
+            panel.find('.loading').hide();
+        });
+
+        njobs_dboard.bind(njobs_ctrl, [njobs_chart,nrjobs_chart]);
+        njobs_dboard.draw(cluster_util_data);
+    }
+
+    /** visualization for headnode status **/
+    function visual_hnode_status( panel, obj ) {
+
+        hnode_status_data = new google.visualization.DataTable();
+       
+        hnode_status_data.addColumn('datetime', 'Time');
+        hnode_status_data.addColumn('string'  , 'Node');
+        hnode_status_data.addColumn('number'  , 'Memory');
+        hnode_status_data.addColumn('number'  , 'Cores');
+        hnode_status_data.addColumn('number'  , 'Xvnc');
+        hnode_status_data.addColumn('number'  , '10 min. load');
+        hnode_status_data.addColumn('number'  , 'Processes');
+        hnode_status_data.addColumn('string'  , 'Top processes');
+
+        if ( obj.length > 0 ) {
+
+            var dtstr_opts = { weekday: "long",
+                               year   : "numeric",
+                               month  : "short",
+                               day    : "numeric",
+                               hour   : "2-digit",
+                               minute : "2-digit" };
+
+            $("#hnode_status_t_update").html("Last update: " + (new Date(obj[0].timestamp * 1000)).toLocaleTimeString('en-us',dtstr_opts));
+        }
+
+        for (var i=0; i<obj.length; i++ ) {
+            if ( obj[i].timestamp < obj[0].timestamp ) {
+                break;
+            } else {
+
+                // split obj[i].top_ps by '|' and add element as individual table
+                top_ps_list = obj[i].top_ps.split("|");
+
+                top_ps_html  = "<table class=\"ps\">";
+                top_ps_html += "<tr class=\"ps_header\">";
+                top_ps_html += "<th width=\"10%\">CPU\%</th>";
+                top_ps_html += "<th width=\"10%\">MEM\%</th>";
+                top_ps_html += "<th width=\"10%\">PID</th>";
+                top_ps_html += "<th width=\"10%\">UID</th>";
+                top_ps_html += "<th width=\"15%\">ETIME</th>";
+                top_ps_html += "<th width=\"45%\">PROC</th>";
+                top_ps_html += "</tr>";
+                
+                for (var j=0; j<top_ps_list.length; j++ ) {
+                    ps_data_str = top_ps_list[j].replace(/\s+/g,'##')
+                    ps_data = ps_data_str.split('##');
+
+                    top_ps_html += "<tr>";
+                    for ( var k=0; k < 5; k++ ) {
+                        top_ps_html += "<td class=\"ps_data\">" + ps_data[k].replace('##',' ') + "</td>";
+                    }
+
+                    if ( ps_data.length == 6 ) {
+                        top_ps_html += "<td class=\"ps_data\"><div class=\"ps_args\">" + ps_data[5] + "</div></td>";
+                    } else {
+                        top_ps_html += "<td class=\"ps_data\"><div class=\"ps_args\">" + ps_data.slice(5,-1).join(' ') + "</div></td>";
+                    }
+
+                    top_ps_html += "</tr>";
+                }
+                top_ps_html += "</table>";
+
+                hnode_status_data.addRow([new Date(obj[i].timestamp * 1000 ),
+                                          obj[i].host,
+                                          obj[i].mem,
+                                          obj[i].ncores,
+                                          obj[i].nxvnc,
+                                          obj[i].load_10m,
+                                          obj[i].total_ps,
+                                          top_ps_html]);
+            }
+        }
+
+        // formatters       
+        var time_formatter = new google.visualization.DateFormat({pattern: "yy-MM-dd HH:mm:ss"});
+        time_formatter.format(hnode_status_data, 0);
+
+        /* make default table view */ 
+        var tab_view = new google.visualization.DataView(hnode_status_data);
+        tab_view.hideColumns([0]);
+
+        /* table of the latest cluster status */
+        var table = new google.visualization.ChartWrapper({ 'chartType'  : 'Table',
+                                                            'containerId': 'hnode_data_table',
+                                                            'options': {'title'        : 'Headnode status: ',
+                                                                        'width'        : 1024,
+                                                                        'showRowNumber': true,
+                                                                        'allowHtml'    : true}
+                                                          });
+
+        // set chart listener
+        function tabSelectHandler() {
+            var selectedItem = table.getChart().getSelection()[0];
+            if (selectedItem) {
+                var node = hnode_status_data.getValue(tab_view.getTableRowIndex(selectedItem.row), 1);
+
+                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Mentat+Cluster&h=" + node + "&mc=2",
+                            iframe : true,
+                            width  : "80%",
+                            height : "80%"});
+            }
+        }
+        google.visualization.events.addListener(table, 'select', tabSelectHandler);
+
+        /* filters */
+        var tmem_filter = new google.visualization.ControlWrapper({'controlType': 'NumberRangeFilter',
+                                                                   'containerId': 'hnode_tmem_filter', 
+                                                                   'options'    : { 'filterColumnLabel' : 'Memory',
+                                                                                    'ui': {'label'      : 'Total memory range: '}
+                                                                                  }
+                                                                  });
+
+        var tcore_filter = new google.visualization.ControlWrapper({'controlType': 'NumberRangeFilter',
+                                                                    'containerId': 'hnode_tcore_filter', 
+                                                                    'options'    : { 'filterColumnLabel': 'Cores',
+                                                                                     'ui': {'label'      : 'Total ncores range: '}
+                                                                                   }
+                                                                  });
+
+        /* dashboard */
+        var tab_dboard = new google.visualization.Dashboard( document.getElementById("hnode_status_dashboard"));
+
+        google.visualization.events.addListener(tab_dboard, 'ready', function() {
+            panel.find('.loading').hide();
+        });
+
+        tab_dboard.bind([tcore_filter,tmem_filter],table);
+        tab_dboard.draw(tab_view);
+
+        /* manual style customization */
+        var c_widths = [ { 'title': 'Node'  , 'width': '80px' },
+                         { 'title': 'Cores' , 'width': '150px' },
+                         { 'title': 'Memory', 'width': '150px' },
+                         { 'title': 'Xvnc'  , 'width': '150px' },
+                         { 'title': 'Top processes', 'width': '330px' } ];
+
+        for (var i=0; i < c_widths.length; i++) {
+            $('.google-visualization-table-th:contains(' + c_widths[i].title + ')').css('width', c_widths[i].width );
+        }
+    }
+
+    /** visualization for cluster status **/
+    function visual_cluster_status( panel, obj ) {
+
+        cluster_status_data = new google.visualization.DataTable();
+       
+        cluster_status_data.addColumn('datetime', 'Time');
+        cluster_status_data.addColumn('string'  , 'Node');
+        cluster_status_data.addColumn('string'  , 'CPU');
+        cluster_status_data.addColumn('number'  , 'Network');
+        cluster_status_data.addColumn('number'  , 'Free memory');
+        cluster_status_data.addColumn('number'  , 'Free memory');    // duplication of this column is by design
+        cluster_status_data.addColumn('number'  , 'Total memory');
+        cluster_status_data.addColumn('number'  , 'Free cores');
+        cluster_status_data.addColumn('number'  , 'Free cores');     // duplication of this column is by design
+        cluster_status_data.addColumn('number'  , 'Total cores');
+        cluster_status_data.addColumn('number'  , 'Interactive');
+        cluster_status_data.addColumn('number'  , 'Matlab');
+        cluster_status_data.addColumn('number'  , 'VGL');
+        cluster_status_data.addColumn('number'  , 'Batch');
+        cluster_status_data.addColumn('string'  , 'For interactive');
+        cluster_status_data.addColumn('string'  , 'For matlab');
+        cluster_status_data.addColumn('string'  , 'For VGL');
+        cluster_status_data.addColumn('string'  , 'For batch');
+        cluster_status_data.addColumn('string'  , 'Status');
+
+        if ( obj.length > 0 ) {
+
+            var dtstr_opts = { weekday: "long",
+                               year   : "numeric",
+                               month  : "short",
+                               day    : "numeric",
+                               hour   : "2-digit",
+                               minute : "2-digit" };
+
+            $("#status_t_update").html("Last update: " + (new Date(obj[0].timestamp * 1000)).toLocaleTimeString('en-us',dtstr_opts));
+        }
+
+        for (var i=0; i<obj.length; i++ ) {
+            if ( obj[i].timestamp < obj[0].timestamp ) {
+                break;
+            } else {
+
+                cluster_status_data.addRow([new Date(obj[i].timestamp * 1000 ),
+                                 obj[i].host,
+                                 obj[i].cpu,
+                                 parseInt(obj[i].net.replace("GigE","")),
+                                 100 * obj[i].mem_left / obj[i].mem,
+                                 obj[i].mem_left,
+                                 obj[i].mem,
+                                 100 * obj[i].ncores_left / obj[i].ncores,
+                                 obj[i].ncores_left,
+                                 obj[i].ncores,
+                                 obj[i].ncores_inter,
+                                 obj[i].ncores_matlab,
+                                 obj[i].ncores_vgl,
+                                 obj[i].ncores_batch,
+                                 (obj[i].is_interactive == 1) ? 'T':'F',
+                                 (obj[i].is_matlab      == 1) ? 'T':'F',
+                                 (obj[i].is_vgl         == 1) ? 'T':'F',
+                                 (obj[i].is_batch       == 1) ? 'T':'F',
+                                 obj[i].stat
+                ]);
+            }
+        }
+
+        // formatters       
+        var time_formatter = new google.visualization.DateFormat({pattern: "yy-MM-dd HH:mm:ss"});
+        time_formatter.format(cluster_status_data, 0);
+
+        var ratio_formatter = new google.visualization.NumberFormat({suffix: '%', fractionDigits: 1});
+        ratio_formatter.format(cluster_status_data, 4);
+        ratio_formatter.format(cluster_status_data, 7);
+
+        var bar_formatter = new google.visualization.BarFormat({showValue:false, colorPositive:'green'});
+        bar_formatter.format(cluster_status_data, 4);
+        bar_formatter.format(cluster_status_data, 7);
+
+        //var pat_formatter_glink = new google.visualization.PatternFormat('<a class="iframe" href="http://ganglia.dccn.nl/?r=day&c=Torque+Cluster&h={0}&mc=2">{0}</a>');
+        //pat_formatter_glink.format(cluster_status_data,  [1], 1);
+
+        var pat_formatter_usage = new google.visualization.PatternFormat('{0} {1}/{2}');
+        pat_formatter_usage.format(cluster_status_data,  [4,5,6], 5);
+        pat_formatter_usage.format(cluster_status_data,  [7,8,9], 8);
+
+        var pat_formatter_type = new google.visualization.PatternFormat('<div class="{0}">{1}</div>');
+        pat_formatter_type.format(cluster_status_data,  [14,10], 10);
+        pat_formatter_type.format(cluster_status_data,  [15,11], 11);
+        pat_formatter_type.format(cluster_status_data,  [16,12], 12);
+        pat_formatter_type.format(cluster_status_data,  [17,13], 13);
+
+        var pat_formatter_stat = new google.visualization.PatternFormat('<font class="{1} masterTooltip" title="{1}">{0}</font>');
+        pat_formatter_stat.format(cluster_status_data,  [1,18], 1);
+      
+        /* make default table view */ 
+        var tab_view = new google.visualization.DataView(cluster_status_data);
+        tab_view.hideColumns([0,4,6,7,9,14,15,16,17,18]);
+
+        /* table of the latest cluster status */
+        var table = new google.visualization.ChartWrapper({ 'chartType'  : 'Table',
+                                                            'containerId': 'data_table',
+                                                            'options': {'title'        : 'Cluster status: ',
+                                                                        'width'        : 1024,
+                                                                        'showRowNumber': true,
+                                                                        'allowHtml'    : true}
+                                                          });
+
+        // set chart listener
+        function tabSelectHandler() {
+            var selectedItem = table.getChart().getSelection()[0];
+            if (selectedItem) {
+                var node = cluster_status_data.getValue(tab_view.getTableRowIndex(selectedItem.row), 1);
+
+                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Torque+Cluster&h=" + node + "&mc=2",
+                            iframe : true,
+                            width  : "80%",
+                            height : "80%"});
+            }
+        }
+
+        google.visualization.events.addListener(table, 'select', tabSelectHandler);
+       
+        /* filters */
+        var fmem_filter = new google.visualization.ControlWrapper({'controlType': 'NumberRangeFilter',
+                                                                   'containerId': 'fmem_filter', 
+                                                                   'options'    : { 'filterColumnLabel' : 'Free memory',
+                                                                                    'ui': {'label'      : 'Free memory range: '}
+                                                                                  }
+                                                                  });
+
+        var fcore_filter = new google.visualization.ControlWrapper({'controlType': 'NumberRangeFilter',
+                                                                    'containerId': 'fcore_filter', 
+                                                                    'options'    : { 'filterColumnLabel': 'Free cores',
+                                                                                     'ui': {'label'      : 'Free ncores range: '}
+                                                                                   }
+                                                                  });
+
+        /* dashboard */
+        var tab_dboard = new google.visualization.Dashboard( document.getElementById("status_dashboard"));
+
+        google.visualization.events.addListener(tab_dboard, 'ready', function() {
+            panel.find('.loading').hide();
+            $("#node_func").show();
+        });
+
+        tab_dboard.bind([fmem_filter,fcore_filter],table);
+        tab_dboard.draw(tab_view);
+
+        /* manual style customization */
+        var c_widths = [ { 'title': 'Node'       , 'width': '80px' },
+                         { 'title': 'CPU'        , 'width': '80px' },
+                         { 'title': 'Network'    , 'width': '80px' },
+                         { 'title': 'Free cores' , 'width': '150px' },
+                         { 'title': 'Free memory', 'width': '150px' },
+                         { 'title': 'Interactive', 'width': '80px' },
+                         { 'title': 'Matlab'     , 'width': '80px' },
+                         { 'title': 'VGL'        , 'width': '80px' },
+                         { 'title': 'Batch'      , 'width': '80px' } ];
+
+        for (var i=0; i < c_widths.length; i++) {
+            $('.google-visualization-table-th:contains(' + c_widths[i].title + ')').css('width', c_widths[i].width );
+        }
+
+/*
+        $("img[width]").each(function(index, img) {
+            img.css("width" , img.attr("width"));
+        });
+
+        $("img[height]").each(function(index, img) {
+            img.css("height" , img.attr("height"));
+        });
+*/
+
+        // node function selector 
+        $("#node_func").change( function() {
+            func_cols = {"interactive":14, "matlab":15, "vgl":16, "batch":17};
+        
+            if ( $(this).val() == "all" ) {
+                tab_view.setRows( 0, cluster_status_data.getNumberOfRows()-1 );
+            } else {
+                filter = [{"column": func_cols[$(this).val()], "value": "T"}];
+                tab_view.setRows( cluster_status_data.getFilteredRows(filter) );
+            }
+
+            fmem_min = Math.min.apply( Math, tab_view.getDistinctValues(3) );
+            fmem_max = Math.max.apply( Math, tab_view.getDistinctValues(3) );
+
+            fcore_min = Math.min.apply( Math, tab_view.getDistinctValues(4) );
+            fcore_max = Math.max.apply( Math, tab_view.getDistinctValues(4) );
+
+            fmem_filter.setState({'lowValue' : fmem_min , 'highValue': fmem_max});
+            fcore_filter.setState({'lowValue': fcore_min, 'highValue': fcore_max});
+        
+            tab_dboard.draw( tab_view );
+        });
+    }
+
+    /* actual function loading and visualizing cluster status */ 
+    function loadClusterStatus(panel) {
+
+        panel.find('.loading').show();
+
+        var jqx = $.getJSON( "cgi-bin/get_trackTorque_data.py?mode=last", function( data ) {
+            visual_cluster_status(panel, $.parseJSON( data ) );
+        });
+    }
+
+    /* actual function loading and visualizing head node status */ 
+    function loadHeadNodeStatus(panel) {
+
+        panel.find('.loading').show();
+
+        var jqx = $.getJSON( "cgi-bin/get_trackTorque_data.py?mode=last&type=head", function( data ) {
+            visual_hnode_status(panel, $.parseJSON( data ) );
+        });
+    }
+
+    /* actual function loading and visualizing cluster utilization history */ 
+    function loadClusterUtilizationHistory(panel) {
+
+        panel.find('.loading').show();
+
+        // load cluster utilization history 
+        var jqx = $.getJSON( "cgi-bin/get_trackTorque_data.py?type=stat&period=7", function( data ) {
+            visual_cluster_utilization_history(panel, $.parseJSON( data ) );
+        });
+    }
+
+    /* actual function loading and visualizing statistical summary table */ 
+    function loadStatSummary(panel) {
+
+        panel.find('.loading').show();
+
+        // load cluster utilization history
+        var jqx = $.get( "cgi-bin/get_statistic_summary.py", function( data ) {
+            document.getElementById('stat_summary').innerHTML = '<pre>' + data + '</pre>';
+        }, 'text' );
+
+        panel.find('.loading').hide();
+    }
+
+    /* actual function loading and visualizing job efficiency history */ 
+    function loadJobEfficiencyHistory(panel) {
+
+        panel.find('.loading').show();
+
+        // load cluster utilization history 
+        var jqx = $.getJSON( "cgi-bin/get_trackTorqueJobs_data.py?type=stat&period=7", function( data ) {
+            visual_job_efficiency_history(panel, $.parseJSON( data ) );
+        });
+    }
+
+    /* dummy function mimicing animation before and after the loading and visualization */ 
+    function loadDummy(panel) {
+        panel.find('.loading').show();
+        setTimeout( function() { panel.find('.loading').hide(); }, 5000 );
+    }
+
+    /* wrapper function for drawing tabs */ 
+    function loadTab(idx, panel) {
+        switch(idx) {
+            case 0:   // head node status
+                if ( ! hnode_status_data ) loadHeadNodeStatus(panel);
+                break;
+
+            case 1:   // cluster status
+                if ( ! cluster_status_data ) loadClusterStatus(panel);
+                break;
+
+            case 2:   // cluster status
+                if ( ! cluster_util_data ) loadClusterUtilizationHistory(panel);
+                break;
+
+            case 3: // display accordion in the statistics tab 
+                $( "#statistics_accordion" ).accordion({active  : 0, heightStyle : "fill", collapsible: true,
+                                                        create  : function(event, ui) { loadStatisticsAccordion(jQuery(this).find("h3").index(ui.header), ui.panel); },
+                                                        activate: function(event, ui) { loadStatisticsAccordion(jQuery(this).find("h3").index(ui.newHeader), ui.newPanel); }});
+
+                break;
+
+            default:
+                loadDummy(panel);
+                break; 
+        }
+    }
+
+    /* wrapper function for drawing various visualization concerning statistics */ 
+    function loadStatisticsAccordion(idx, panel) {
+       
+        switch(idx) {
+            case 0:   // cluster utilization history 
+                loadStatSummary(panel);
+                break;
+
+//            case 1:   // job efficiency 
+//                if ( ! job_eff_wtime_data ) loadJobEfficiencyHistory(panel);
+//                break;
+
+            default:
+                loadDummy(panel);
+                break;
+        }
+    }
+
+    /* main action when document is fully loaded */
+    google.setOnLoadCallback( function() {
+        $(document).ready( function() {
+
+            // display tabs
+            $("#tabs").tabs({active  : 1,
+                             create  : function(event, ui) { loadTab(ui.tab.index(), ui.panel); },
+                             activate: function(event, ui) { loadTab(ui.newTab.index(), ui.newPanel); }});
+
+            // Tooltip only Text
+            $('.masterTooltip').hover(function(){
+                var title = $(this).attr('title');
+                $(this).data('tipText', title).removeAttr('title');
+                $('<p class="tooltip"></p>').text(title).appendTo('body').fadeIn('fast');
+            }, function() {
+                // Hover out code
+               $(this).attr('title', $(this).data('tipText'));
+               $('.tooltip').remove();
+            }).mousemove(function(e) {
+                var mousex = e.pageX + 20; //Get X coordinates
+                var mousey = e.pageY + 10; //Get Y coordinates
+                $('.tooltip').css({ top: mousey, left: mousex })
+            });
+
+            // enabling autorefresh
+            setInterval( function() { location.reload(true); }, 600000);
+
+        });
+    });
+</script>
+</head>
+<body>
+<div id="tabs">
+  
+  <!-- define the tabs -->
+  <ul>
+    <li><a href="#hnode_status_dashboard">Headnode Status</a></li>
+    <li><a href="#status_dashboard">Cluster Status</a></li>
+    <li><a href="#cluster_util_dashboard">Cluster Utilisation</a></li>
+    <li><a href="#statistics_dashboard">Job Statistics</a></li>
+  </ul>
+
+  <!-- tab content for cluster status -->
+  <div id="hnode_status_dashboard" style="width:1024px;">
+    <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+    <table style="border-width:0px;">
+      <tr>
+      <td id="hnode_status_t_update" colspan="2" style="border-width:0px; padding:10px"></td>
+      </tr>
+      <tr>
+      <td id="hnode_tcore_filter"  style="border-width:0px; padding:10px"></td>
+      <td id="hnode_tmem_filter"   style="border-width:0px; padding:10px"></td>
+      </tr>
+    </table>
+    <div id="hnode_data_table"   style="width:1024px;"></div>
+  </div>
+
+  <!-- tab content for cluster status -->
+  <div id="status_dashboard" style="width:1024px;">
+    <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+    <table style="border-width:0px;">
+      <tr>
+      <td id="status_t_update" colspan="4" style="border-width:0px; padding:10px"></td>
+      </tr>
+      <tr>
+      <td id="fcore_filter"  style="border-width:0px; padding:10px"></td>
+      <td id="fmem_filter"   style="border-width:0px; padding:10px"></td>
+      <td id="func_selector" style="border-width:0px; padding:10px">
+          <select id="node_func" style="display:none;" class="form-control input-sm">
+          <option value="all">All</option>
+          <option value="interactive">Interactive</option>
+          <option value="matlab">Matlab</option>
+          <option value="vgl">VirtualGL</option>
+          <option value="batch">Batch</option>
+          </select>
+      </td>
+      </tr>
+    </table>
+    <div id="data_table"   style="width:1024px;"></div>
+  </div>
+
+  <!-- tab content for cluster utilization history -->
+  <div id="cluster_util_dashboard" style="width:1024px;">
+    <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+    <div id="njobs_chart"  style="width:950px; height:200px;"></div>
+    <div id="nrjobs_chart" style="width:950px; height:200px;"></div>
+    <div id="njobs_ctrl"   style="width:950px; height:70px;"></div>
+  </div>
+
+  <!-- tab content for historical statistics -->
+  <div id="statistics_dashboard" style="width:1024px; height:900px">
+    <ul id="statistics_accordion">
+
+<!--
+      <li>
+        <h3><a href="#">Cluster utilization history</a></h3>
+        <div id="njobs">
+          <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+          <div id="njobs_chart"  style="width:950px; height:200px;"></div>
+          <div id="nrjobs_chart" style="width:950px; height:200px;"></div>
+          <div id="njobs_ctrl"   style="width:950px; height:70px;"></div>
+        </div>
+      </li>
+-->
+      <li>
+        <h3><a href="#">Summary</a></h3>
+        <div id="stat_summary">
+          <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+        </div>
+      </li>
+
+      <li>
+        <h3><a href="#">Job waiting time</a></h3>
+        <div id="stat_qtime">
+          <img src="cgi-bin/get_statistic_plots.py?stat=qtime" style="width:950px;"/>
+        </div>
+      </li>
+
+      <li>
+        <h3><a href="#">Memory utilization fraction</a></h3>
+        <div id="stat_eff_mem">
+          <img src="cgi-bin/get_statistic_plots.py?stat=eff_mem" style="width:950px;"/>
+        </div>
+      </li>
+
+      <li>
+        <h3><a href="#">CPU utilization fraction</a></h3>
+        <div id="stat_eff_cpu">
+          <img src="cgi-bin/get_statistic_plots.py?stat=eff_cpu" style="width:950px;"/>
+        </div>
+      </li>
+
+<!--
+      <li>
+        <h3><a href="#">Job efficiency</a></h3>
+        <div id="rsrc_efficiency">
+          <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+          <div id="jstat_eff_wtime" style="width:950px; height:200px;"></div>
+          <div id="jstat_eff_mem"   style="width:950px; height:200px;"></div>
+          <div id="jstat_cpu_util"  style="width:950px; height:200px;"></div>
+        </div>
+      </li>
+-->
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,45 @@
+dccn-c003	33Gb	410G	8	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5405 @ 2.00GHz
+dccn-c004	33Gb	410G	8	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5520 @ 2.27GHz
+dccn-c005	49Gb	410G	12	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU X5650 @ 2.67GHz
+dccn-c006	265Gb	1.8T	48	CentOS release 6.2 (Final)	AMD Opteron(tm) Processor 6176
+dccn-c007	265Gb	1.8T	48	CentOS release 6.2 (Final)	AMD Opteron(tm) Processor 6176
+dccn-c008	16Gb	318G	8	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5405 @ 2.00GHz
+dccn-c009	16Gb	318G	8	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5410 @ 2.33GHz
+dccn-c010	16Gb	318G	8	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5410 @ 2.33GHz
+dccn-c011	132Gb	917G	16	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-2650 0 @ 2.00GHz
+dccn-c012	132Gb	917G	16	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-2650 0 @ 2.00GHz
+dccn-c013	132Gb	917G	16	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-2650 0 @ 2.00GHz
+dccn-c014	132Gb	917G	16	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-2650 0 @ 2.00GHz
+dccn-c015	132Gb	917G	16	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-2650 0 @ 2.00GHz
+dccn-c016	264Gb	917G	16	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz
+dccn-c017	264Gb	917G	16	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz
+dccn-c018	264Gb	917G	16	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-2670 0 @ 2.60GHz
+dccn-c019	529Gb	917G	64	CentOS release 6.2 (Final)	AMD Opteron(tm) Processor 6378
+dccn-c020	529Gb	2.0T	64	CentOS release 6.2 (Final)	AMD Opteron(tm) Processor 6378
+dccn-c021	529Gb	2.0T	64	CentOS release 6.2 (Final)	AMD Opteron(tm) Processor 6378
+dccn-c340	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c341	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c342	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c343	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c344	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c345	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c346	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c347	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c348	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c349	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c350	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c351	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c352	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c353	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c354	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c355	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c356	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c357	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c358	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c359	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c360	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c361	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c362	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c363	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c364	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz
+dccn-c365	16Gb	869G	4	CentOS release 6.2 (Final)	Intel(R) Xeon(R) CPU E5-1620 0 @ 3.60GHz

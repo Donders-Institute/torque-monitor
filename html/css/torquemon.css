@@ -1,0 +1,67 @@
+/* text color for job status categories */
+.success {color: #179314;}
+.failed  {color: #D62C10;}
+.killed  {color: #FD9307;}
+
+.date    {font-weight:bold;}
+.highest {text-align:right; border: 2px solid #FE2E2E;}
+.second_highest  {text-align:right; border: 2px solid #FE2E2E;}
+.third_highest   {text-align:right; border: 2px solid #FE2E2E;}
+
+/* text color for True and False */
+.T {color: #179314;}
+.F {color: #D62C10;}
+
+/* text color for Node status */
+.free {color: #179314;}
+.down {color: #D62C10;}
+.job-exclusive {color: #FAAC58;}
+
+/* style of top 5 processes table */
+table.ps {
+    width:560px;
+    font-size:10pt;
+    font-family: Consolas, Menlo, Monaco, Lucida Console, Courier New, monospace, serif;
+}
+
+tr.ps_header { border-bottom:1pt solid gray; }
+td.ps_data {
+    vertical-align:top;
+}
+div.ps_args {
+    width:238px;
+    overflow-x:scroll;
+}
+
+/* text color for True and False */
+div.info {
+  text-align:right;
+  height: 30px;
+  padding-top:0.5em; padding-right:2em;
+  font-size:20px; font-family:Lucida Grande,Lucida Sans,Arial,sans-serif;
+  background-color: #67A0CE;
+  border-top-left-radius:5px; border-top-right-radius:5px;
+  -moz-border-top-left-radius:5px; -moz-border-top-right-radius:5px;
+}
+
+div.info_b {
+  text-align:left;
+  height: 30px;
+  padding-top:0.5em; padding-left:1em;
+  font-size:20px; font-family:Lucida Grande,Lucida Sans,Arial,sans-serif;
+  background-color: #A4A4A4;
+}
+
+div.chart_lowh {width:100%; height:150px; padding-top:1em; padding-bottom:1em;}
+
+/* get title value and show it as tooltip */
+.tooltip {
+	display:none;
+	position:absolute;
+	border:1px solid #333;
+	background-color:#161616;
+	border-radius:5px;
+	padding:10px;
+	color:#fff;
+	font-size:12px Arial;
+}

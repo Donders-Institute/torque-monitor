@@ -1,0 +1,487 @@
+<head>
+<title>DCCN Torque/Maui Cluster Monitor</title>
+<link rel='stylesheet' href='http://code.jquery.com/ui/1.10.4/themes/redmond/jquery-ui.css'>
+<link rel='stylesheet' href='css/torquemon.css'>
+<!-- <script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script> -->
+<script type='text/javascript' src='http://code.jquery.com/jquery-1.10.2.js'></script>
+<script type='text/javascript' src='http://code.jquery.com/ui/1.10.4/jquery-ui.js'></script>
+<script type='text/javascript' src='js/jquery.colorbox.js'></script>
+<script type='text/javascript' src='js/moment.min.js'></script>
+<script type='text/javascript' src='js/util.js'></script>
+<script type='text/javascript' src='https://www.google.com/jsapi'></script>
+<script type='text/javascript'>
+    google.load('visualization', '1', {packages:['corechart','table','controls']});
+</script>
+<script>
+
+    /** global variables **/
+    var acc_data;
+    var queues = ['matlab','batch','inter','vgl'];
+    var stat   = ['s','f','k'];
+ 
+    var slabel = {'s'  : 'success',
+                  'f'  : 'failed' ,
+                  'k'  : 'killed'};
+ 
+    var qlabel = {'all'   : 'all',
+                  'matlab': 'matlab',
+                  'inter' : 'interactive',
+                  'batch' : 'batch',
+                  'vgl'   : 'vgl'};
+
+    /** make the main DataTable **/
+    function makeDataTable(uid, queue, obj) {
+        // create DataTable
+        acc_data = new google.visualization.DataTable();
+       
+        acc_data.addColumn('datetime', 'Time');
+        acc_data.addColumn('number'  , qlabel[queue]);
+        // columns of walltime consumption
+        acc_data.addColumn('number'  , 'walltime');  //success
+        acc_data.addColumn('number'  , 'walltime');  //failed
+        acc_data.addColumn('number'  , 'walltime');  //killed
+        // columns of cputime consumption
+        acc_data.addColumn('number'  , 'cputime');  //success
+        acc_data.addColumn('number'  , 'cputime');  //failed
+        acc_data.addColumn('number'  , 'cputime');  //killed
+
+        for ( var i=0; i<queues.length; i++ ) {
+            var _q = queues[i];
+            for ( var j=0; j<stat.length; j++ ) {
+                var _s = stat[j];
+                acc_data.addColumn('number', slabel[_s]);   // for pMemory requirement 
+                acc_data.addColumn('number', slabel[_s]);   // for pMemory consumption
+                acc_data.addColumn('number', slabel[_s]);   // for vMemory consumption
+                acc_data.addColumn('number', slabel[_s]);   // for pMemory utilization fraction
+                acc_data.addColumn({type:'boolean',role:'scope'}); 
+                acc_data.addColumn('number', slabel[_s]);   // for CPU utilization fraction
+                acc_data.addColumn({type:'boolean',role:'scope'});
+            }
+        }
+
+        for (var id=0; id<obj.length; id++ ) {
+            var d = [];
+
+            d.push( new Date(obj[id].timestamp * 1000) ); 
+            d.push( obj[id].nj ); 
+            d.push( obj[id].cwt_s ); 
+            d.push( obj[id].cwt_f ); 
+            d.push( obj[id].cwt_k ); 
+            d.push( obj[id].cct_s ); 
+            d.push( obj[id].cct_f ); 
+            d.push( obj[id].cct_k ); 
+
+            for ( var i=0; i<queues.length; i++ ) {
+                var _q = queues[i];
+                for ( var j=0; j<stat.length; j++ ) {
+                    var _s = stat[j];
+                    d.push( Math.max( 0, obj[id]['avg_rmem_'+_q+'_'+_s] ) );
+                    d.push( Math.max( 0, obj[id]['avg_cmem_'+_q+'_'+_s] ) );
+                    d.push( Math.max( 0, obj[id]['avg_cvmem_'+_q+'_'+_s] ) );
+                    d.push( ( obj[id]['avg_eff_mem_' +_q+'_'+_s] > 0 ) ? 100. * obj[id]['avg_eff_mem_' +_q+'_'+_s]:0 );
+                    d.push( ( obj[id]['avg_eff_mem_' +_q+'_'+_s] > 0 ) ? true:false);
+                    d.push( ( obj[id]['avg_cpu_util_'+_q+'_'+_s] > 0 ) ? 100. * obj[id]['avg_cpu_util_'+_q+'_'+_s]:0 );
+                    d.push( ( obj[id]['avg_cpu_util_'+_q+'_'+_s] > 0 ) ? true:false);
+                }
+            }
+
+            acc_data.addRow( d );
+        }
+
+        acc_data.sort(0);
+
+        // format certain DataTable columns regarding to their display
+        var time_formatter = new google.visualization.DateFormat({pattern: 'MMM d, yyyy'});
+        time_formatter.format(acc_data, 0);
+
+        var ct_formatter = new google.visualization.NumberFormat({fractionDigits: 3});
+        for ( var i=2; i<=7; i++ ) {
+            ct_formatter.format(acc_data, i);
+        }
+
+        var mem_formatter   = new google.visualization.NumberFormat({fractionDigits: 1});
+        var ratio_formatter = new google.visualization.NumberFormat({suffix: '%', fractionDigits: 1});
+        for ( var i=8; i<acc_data.getNumberOfColumns(); i+=7 ) {
+            mem_formatter.format(acc_data  , i);
+            mem_formatter.format(acc_data  , i+1);
+            mem_formatter.format(acc_data  , i+2);
+            ratio_formatter.format(acc_data, i+3);
+            ratio_formatter.format(acc_data, i+5);
+        }
+    }
+
+    /** visualization functions **/
+    function visual_njobs(panel, uid, queue ) {
+        var nj_chart = new google.visualization.ChartWrapper({'chartType'  : 'ColumnChart',
+                                                              'containerId': 'nj_chart',
+                                                              'options'    : {'width'    : '100%',
+                                                                              'height'   : '150px',
+                                                                              'title'    : 'Number of jobs',
+                                                                              'chartArea': {'height':'70%', 'width':'85%'},
+                                                                              'legend'   : {'position': 'in', 'alignment': 'end'},
+                                                                              'bar'      : {'groupWidth': '90%'},
+                                                                              'vAxis'    : {minValue: 0,
+                                                                                            title   : 'Job count'},
+                                                                              },
+                                                               'dataTable' : acc_data,
+                                                               'view'      : {'columns': [0,1]},
+                                                             });
+
+        
+        google.visualization.events.addListener(nj_chart, 'ready', function() {
+            panel.find('.loading').hide();
+        });
+
+        nj_chart.draw();
+    }
+
+    function visual_time_consumption(panel, uid, queue ) {
+
+        var ct_chart_s = new google.visualization.ChartWrapper({'chartType'  : 'ColumnChart',
+                                                                'containerId': 'ct_chart_s',
+                                                                'options'    : {'width'    : '100%',
+                                                                                'height'   : '150px',
+                                                                                'title'    : 'Time consumption of successful jobs',
+                                                                                'chartArea': {'height':'70%', 'width':'85%'},
+                                                                                'legend'   : {'position': 'in', 'alignment': 'end'},
+                                                                                'bar'      : {'groupWidth': '80%'},
+                                                                                'vAxis'    : {minValue: 0,
+                                                                                              title   : 'Hours'},
+                                                                                },
+                                                                   'dataTable'  : acc_data,
+                                                                   'view'       : {'columns': [0,2,5]},
+                                                              });
+        
+        var ct_chart_f = new google.visualization.ChartWrapper({'chartType'  : 'ColumnChart',
+                                                                'containerId': 'ct_chart_f',
+                                                                'options'    : {'width'    : '100%',
+                                                                                'height'   : '150px',
+                                                                                'title'    : 'Time consumption of failed jobs',
+                                                                                'chartArea': {'height':'70%', 'width':'85%'},
+                                                                                'legend'   : {'position': 'in', 'alignment': 'end'},
+                                                                                'bar'      : {'groupWidth': '80%'},
+                                                                                'vAxis'    : {minValue: 0,
+                                                                                              title   : 'Hours'},
+                                                                                },
+                                                                'dataTable'  : acc_data,
+                                                                'view'       : {'columns': [0,3,6]},
+                                                              });
+
+        var ct_chart_k = new google.visualization.ChartWrapper({'chartType'  : 'ColumnChart',
+                                                                'containerId': 'ct_chart_k',
+                                                                'options'    : {'width'    : '100%',
+                                                                                'height'   : '150px',
+                                                                                'title'    : 'Time consumption of killed jobs',
+                                                                                'chartArea': {'height':'70%', 'width':'85%'},
+                                                                                'legend'   : {'position': 'in', 'alignment': 'end'},
+                                                                                'bar'      : {'groupWidth': '80%'},
+                                                                                'vAxis'    : {minValue: 0,
+                                                                                              title   : 'Hours'},
+                                                                                },
+                                                                'dataTable'  : acc_data,
+                                                                'view'       : {'columns': [0,4,7]},
+                                                              });
+
+        google.visualization.events.addListener(ct_chart_s, 'ready', function() {
+            panel.find('.loading').hide();
+        });
+
+        ct_chart_s.draw();
+        ct_chart_f.draw();
+        ct_chart_k.draw();
+    }
+
+    function visual_pmem_consumption( panel, uid, queue ) {
+
+        var clist = {};
+        for ( var i=0; i<queues.length; i++ ) {
+
+            clist[queues[i]] = new google.visualization.ChartWrapper({'chartType'  : 'ColumnChart',
+                                                                      'containerId': 'cmem_chart_' + queues[i],
+                                                                      'options'    : {'width'    : '100%',
+                                                                                      'height'   : '100%',
+                                                                                      'title'    : 'Physical memory consumption (' + qlabel[queues[i]] + ')',
+                                                                                      'chartArea': {'height':'70%', 'width':'85%'},
+                                                                                      'legend'   : {'position': 'in', 'alignment': 'end'},
+                                                                                      'bar'      : {'groupWidth': '90%'},
+                                                                                      'vAxis'    : {minValue: 0,
+                                                                                                    title   : 'Gigabytes'},
+                                                                                      },
+                                                                      'dataTable'  : acc_data,
+                                                                      'view'       : {'columns': [0,8+i*(7*stat.length)+1,
+                                                                                                    8+i*(7*stat.length)+8,
+                                                                                                    8+i*(7*stat.length)+15]},
+                                                                      });
+
+        }
+
+        enableDisplayByQueue(queue, '#cmem_chart_', clist);
+    }
+
+    function visual_vmem_consumption( panel, uid, queue ) {
+
+        var clist = {};
+        for ( var i=0; i<queues.length; i++ ) {
+
+            clist[queues[i]] = new google.visualization.ChartWrapper({'chartType'  : 'ColumnChart',
+                                                                      'containerId': 'cvmem_chart_' + queues[i],
+                                                                      'options'    : {'width'    : '100%',
+                                                                                      'height'   : '100%',
+                                                                                      'title'    : 'Virtual memory consumption (' + qlabel[queues[i]] + ')',
+                                                                                      'chartArea': {'height':'70%', 'width':'85%'},
+                                                                                      'legend'   : {'position': 'in', 'alignment': 'end'},
+                                                                                      'bar'      : {'groupWidth': '90%'},
+                                                                                      'vAxis'    : {minValue: 0,
+                                                                                                    title   : 'Gigabytes'},
+                                                                                      },
+                                                                      'dataTable'  : acc_data,
+                                                                      'view'       : {'columns': [0,8+i*(7*stat.length)+2,
+                                                                                                    8+i*(7*stat.length)+9,
+                                                                                                    8+i*(7*stat.length)+16]},
+                                                                      });
+
+        }
+
+        enableDisplayByQueue(queue, '#cvmem_chart_', clist);
+    }
+
+    function visual_cpu_util_fraction( panel, uid, queue ) {
+
+        var clist = {};
+        for ( var i=0; i<queues.length; i++ ) {
+
+            clist[queues[i]] = new google.visualization.ChartWrapper({'chartType'  : 'ColumnChart',
+                                                                      'containerId': 'cpu_util_chart_' + queues[i],
+                                                                      'options'    : {'width'    : '100%',
+                                                                                      'height'   : '100%',
+                                                                                      'title'    : 'CPU utilization fraction (' + qlabel[queues[i]] + ')',
+                                                                                      'chartArea': {'height':'70%', 'width':'85%'},
+                                                                                      'legend'   : {'position': 'in', 'alignment': 'end'},
+                                                                                      'bar'      : {'groupWidth': '90%'},
+                                                                                      'vAxis'    : {minValue: 0,
+                                                                                                    title   : '%'},
+                                                                                      },
+                                                                      'dataTable'  : acc_data,
+                                                                      'view'       : {'columns': [0,8+i*(7*stat.length)+5 , 8+i*(7*stat.length)+6,
+                                                                                                    8+i*(7*stat.length)+12, 8+i*(7*stat.length)+13,
+                                                                                                    8+i*(7*stat.length)+19, 8+i*(7*stat.length)+20]},
+                                                                      });
+
+        }
+
+        enableDisplayByQueue(queue, '#cpu_util_chart_', clist);
+    }
+
+    function visual_mem_util_fraction( panel, uid, queue ) {
+
+        var clist = {};
+        for ( var i=0; i<queues.length; i++ ) {
+
+            clist[queues[i]] = new google.visualization.ChartWrapper({'chartType'  : 'ColumnChart',
+                                                                      'containerId': 'mem_util_chart_' + queues[i],
+                                                                      'options'    : {'width'    : '100%',
+                                                                                      'height'   : '100%',
+                                                                                      'title'    : 'Memory utilization fraction (' + qlabel[queues[i]] + ')',
+                                                                                      'chartArea': {'height':'70%', 'width':'85%'},
+                                                                                      'legend'   : {'position': 'in', 'alignment': 'end'},
+                                                                                      'bar'      : {'groupWidth': '90%'},
+                                                                                      'vAxis'    : {minValue: 0,
+                                                                                                    title   : '%'},
+                                                                                      },
+                                                                      'dataTable'  : acc_data,
+                                                                      'view'       : {'columns': [0,8+i*(7*stat.length)+3 , 8+i*(7*stat.length)+4,
+                                                                                                    8+i*(7*stat.length)+10, 8+i*(7*stat.length)+11,
+                                                                                                    8+i*(7*stat.length)+17, 8+i*(7*stat.length)+18]},
+                                                                      });
+
+        }
+
+        enableDisplayByQueue(queue, '#mem_util_chart_', clist);
+    }
+
+    /** common function to switch on the display of charts depending on the given queue **/
+    function enableDisplayByQueue(queue, div_prefix, clist) {
+        var qidx  = queues.indexOf(queue);
+        if ( qidx != -1 ) {
+
+            google.visualization.events.addListener(clist[queues[qidx]], 'ready', function() {
+                $('.loading').hide();
+            });
+
+            $(div_prefix + queues[qidx]).show();
+            clist[queues[qidx]].draw();
+
+        } else {
+            google.visualization.events.addListener(clist[queues[0]], 'ready', function() {
+                $('.loading').hide();
+            });
+
+            for (var i=0; i<queues.length; i++ ) {
+                $( div_prefix + queues[i]).show();
+                clist[queues[i]].draw();
+            }
+        }
+    }
+
+    /* dummy function mimicing animation before and after the loading and visualization */ 
+    function loadDummy(panel) {
+        panel.find('.loading').show();
+        setTimeout( function() { panel.find('.loading').hide(); }, 5000 );
+    }
+
+    /* switch function to load relevant accordion panel for various accounting */
+    function loadAccordion(idx, panel, uid, queue) {
+
+        if ( queue == 'interactive') queue = 'inter';  // the server take 'inter' instead of 'interactive' 
+
+        if ( ! acc_data )  loadAccountingData(uid, queue);
+
+        switch ( idx ) {
+            case 0:
+                visual_njobs(panel, uid, queue);
+                break;
+
+            case 1:
+                visual_time_consumption(panel, uid, queue);
+                break;
+
+            case 2:
+                visual_pmem_consumption(panel, uid, queue);
+                break;
+
+            case 3:
+                visual_vmem_consumption(panel, uid, queue);
+                break;
+
+            case 4:
+                visual_cpu_util_fraction(panel, uid, queue);
+                break;
+
+            case 5:
+                visual_mem_util_fraction(panel, uid, queue);
+                break;
+
+            default:
+                loadDummy(panel);
+                break;
+        }
+    }
+
+    /* function to retrieve the data and pass it to the visualization */
+    function loadAccountingData(uid, queue) {
+
+        $('.loading').show();
+
+        $.ajaxSetup({async: false});  // synchronous ajax call
+
+        var jqx = $.getJSON( "cgi-bin/get_accounting_user.py?period=60&uid="+uid+"&queue="+queue, function( data ) {
+            //visual_accounting(uid, queue, $.parseJSON( data ));
+            makeDataTable(uid, queue, $.parseJSON( data ));
+
+            console.log('data loaded');
+        });
+
+        $.ajaxSetup({async: true});  // set back to asynchronous ajax call
+    }
+
+    /* main action when document is fully loaded */
+    google.setOnLoadCallback( function() {
+        $(document).ready( function() {
+
+            var uid   = getUrlVar('uid');
+            var queue = getUrlVar('queue');
+
+            $('#content').html("<font style='padding-right:0.5em;'>User: <a href=http://projects.fcdonders.nl/index.php/users/view/" + uid + " target=_blank>" + uid + "</a></font>" +
+                               "<font style='padding-left:0.5em;'>Job type: " + queue + "</font>");
+
+            $( "#accordion" ).accordion({header      : '> div > h3',
+                                         active      : 0,
+                                         heightStyle : "content",
+                                         collapsible : true,
+                                         create  : function(event, ui) { loadAccordion(jQuery(this).find("h3").index(ui.header), ui.panel, uid, queue); },
+                                         activate: function(event, ui) { loadAccordion(jQuery(this).find("h3").index(ui.newHeader), ui.newPanel, uid, queue); }});
+
+/*
+            $( "#accordion" ).accordion({header      : '> div > h3',
+                                         active      : 0,
+                                         heightStyle : "content",
+                                         collapsible : true,
+                                         create  : function(event, ui) { loadAccordion(jQuery(this).find("h3").index(ui.header), ui.panel, uid, queue); },
+                                         activate: function(event, ui) { loadAccordion(jQuery(this).find("h3").index(ui.newHeader), ui.newPanel, uid, queue); }}).sortable({axis: 'y',
+                                          handle: 'h3',
+                                          stop: function(event,ui) { ui.item.children( "h3" ).triggerHandler( "focusout" ); }});
+*/
+        });
+    });
+</script>
+
+</head>
+<body>
+<div id="acc_dboard" style="width: 100%;">
+  <div id="content" class="info"></div>
+  <div id="accordion" style="width:100%; height:90%; overflow:auto; border-bottom:2px ridge; ">
+    <div class="group">
+    <h3>Number of jobs</h3>
+    <div id="njobs">
+      <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+      <div id="nj_chart"></div>
+    </div>
+    </div>
+
+    <div class="group">
+    <h3>CPU and wallclock time consumption</h3>
+    <div id="tc">
+      <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+      <div id="ct_chart_s"></div>
+      <div id="ct_chart_f"></div>
+      <div id="ct_chart_k"></div>
+    </div>
+    </div>
+
+    <div class="group">
+    <h3>Physical memory consumption</h3>
+    <div id="mc">
+      <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+      <div id="cmem_chart_matlab" style="display:none;"></div>
+      <div id="cmem_chart_batch"  style="display:none;"></div>
+      <div id="cmem_chart_inter"  style="display:none;"></div>
+      <div id="cmem_chart_vgl"    style="display:none;"></div>
+    </div>
+    </div>
+
+    <div class="group">
+    <h3>Virtual memory consumption</h3>
+    <div id="vmc">
+      <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+      <div id="cvmem_chart_matlab" style="display:none;"></div>
+      <div id="cvmem_chart_batch"  style="display:none;"></div>
+      <div id="cvmem_chart_inter"  style="display:none;"></div>
+      <div id="cvmem_chart_vgl"    style="display:none;"></div>
+    </div>
+    </div>
+
+    <div class="group">
+    <h3>CPU utilization fraction</h3>
+    <div id="cpu_f">
+      <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+      <div id="cpu_util_chart_matlab" style="display:none;"></div>
+      <div id="cpu_util_chart_batch"  style="display:none;"></div>
+      <div id="cpu_util_chart_inter"  style="display:none;"></div>
+      <div id="cpu_util_chart_vgl"    style="display:none;"></div>
+    </div>
+    </div>
+
+    <div class="group">
+    <h3>Memory utilization fraction</h3>
+    <div id="mem_f">
+      <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
+      <div id="mem_util_chart_matlab" style="display:none;"></div>
+      <div id="mem_util_chart_batch"  style="display:none;"></div>
+      <div id="mem_util_chart_inter"  style="display:none;"></div>
+      <div id="mem_util_chart_vgl"    style="display:none;"></div>
+    </div>
+    </div>
+
+  </div>
+</div>
+</body>
