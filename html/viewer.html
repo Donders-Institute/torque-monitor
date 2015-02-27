@@ -13,7 +13,7 @@
 <script type='text/javascript' src='js/util.js'></script>
 <script type='text/javascript' src='https://www.google.com/jsapi'></script>
 <script type='text/javascript'>
-    google.load('visualization', '1', {packages:['corechart','table','controls']});
+    google.load('visualization', '1.0', {packages:['corechart','table','controls']});
 </script>
 <script type='text/javascript'>
 
@@ -313,7 +313,8 @@
                 top_ps_html += "</table>";
 
                 hnode_status_data.addRow([new Date(obj[i].timestamp * 1000 ),
-                                          obj[i].host,
+                                          //obj[i].host,
+                                          obj[i].host.replace('.dccn.nl',''),
                                           obj[i].mem,
                                           obj[i].ncores,
                                           obj[i].nxvnc,
@@ -346,7 +347,7 @@
             if (selectedItem) {
                 var node = hnode_status_data.getValue(tab_view.getTableRowIndex(selectedItem.row), 1);
 
-                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Mentat+Cluster&h=" + node + "&mc=2",
+                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Mentat+Cluster&h=" + node + ".dccn.nl&mc=2",
                             iframe : true,
                             width  : "80%",
                             height : "80%"});
@@ -434,7 +435,8 @@
             } else {
 
                 cluster_status_data.addRow([new Date(obj[i].timestamp * 1000 ),
-                                 obj[i].host,
+                                 //obj[i].host,
+                                 obj[i].host.replace('.dccn.nl',''),
                                  obj[i].cpu,
                                  parseInt(obj[i].net.replace("GigE","")),
                                  100 * obj[i].mem_left / obj[i].mem,
@@ -503,7 +505,7 @@
             if (selectedItem) {
                 var node = cluster_status_data.getValue(tab_view.getTableRowIndex(selectedItem.row), 1);
 
-                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Torque+Cluster&h=" + node + "&mc=2",
+                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Torque+Cluster&h=" + node + ".dccn.nl&mc=2",
                             iframe : true,
                             width  : "80%",
                             height : "80%"});
