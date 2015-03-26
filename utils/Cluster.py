@@ -291,7 +291,7 @@ def get_mentat_node_properties(debug=False):
     re_top_ps    = re.compile('^[\d|\.]+\s+[\d|\.]+\s+[\d]+.*$')
     nodes = []
 
-    if rc != 0:
+    if rc not in [0,255]:
         logger.error('command \'%s\' return non-exit code: %d' % (cmd, rc))
     else:
         for l in output.split('\n'):
