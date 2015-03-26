@@ -71,7 +71,10 @@ def __sqlite_hnode_status__(nodes):
     data = []
 
     for n in nodes:
-        data.append( (int(time.mktime(now.timetuple())), n.host, n.ncores, n.mem, n.nxvnc, n.load_1m, n.load_5m, n.load_10m, n.total_ps, '|'.join(n.top_ps)) )
+        # it does not make sense if host's ncore is 0.
+        # TODO: maybe mark the host with ncore=0 as 'down' 
+        if n.ncores > 0:
+            data.append( (int(time.mktime(now.timetuple())), n.host, n.ncores, n.mem, n.nxvnc, n.load_1m, n.load_5m, n.load_10m, n.total_ps, '|'.join(n.top_ps)) )
 
     logger.debug(data)
 
@@ -180,7 +183,10 @@ def __tab_hnode_status__(nodes):
     t.field_names = ['node','ncores','memory','Xvnc sessions','10min. load','total procs.']
 
     for n in nodes:
-        t.add_row( [n.host, n.ncores, n.mem, n.nxvnc, n.load_10m, n.total_ps] )
+        # it does not make sense if host's ncore is 0.
+        # TODO: maybe mark the host with ncore=0 as 'down' 
+        if n.ncores > 0:
+            t.add_row( [n.host, n.ncores, n.mem, n.nxvnc, n.load_10m, n.total_ps] )
 
     print t
 
