@@ -1,21 +1,22 @@
 <html>
 <head>
-<title>DCCN Torque/Maui Cluster Monitor</title>
-<link rel='stylesheet' href='http://code.jquery.com/ui/1.10.4/themes/redmond/jquery-ui.css'>
-<link rel="stylesheet" href="css/colorbox.css" />
-<link rel="stylesheet" href="css/torquemon.css" />
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-<link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
-<script type='text/javascript' src='http://code.jquery.com/jquery-1.10.2.js'></script>
-<script type='text/javascript' src='http://code.jquery.com/ui/1.10.4/jquery-ui.js'></script>
-<script type='text/javascript' src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
-<script type='text/javascript' src='js/jquery.colorbox.js'></script>
-<script type='text/javascript' src='js/util.js'></script>
-<script type='text/javascript' src='https://www.google.com/jsapi'></script>
-<script type='text/javascript'>
+    <title>DCCN Torque/Maui Cluster Monitor</title>
+    <link rel='stylesheet' href='http://code.jquery.com/ui/1.10.4/themes/redmond/jquery-ui.css'>
+    <link rel="stylesheet" href="css/colorbox.css"/>
+    <link rel="stylesheet" href="css/torquemon.css"/>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+    <script type='text/javascript' src='http://code.jquery.com/jquery-1.10.2.js'></script>
+    <script type='text/javascript' src='http://code.jquery.com/ui/1.10.4/jquery-ui.js'></script>
+    <script type='text/javascript' src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    <script type='text/javascript' src='js/jquery.colorbox.js'></script>
+    <script type='text/javascript' src='js/util.js'></script>
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script type='text/javascript'>
     google.load('visualization', '1', {packages:['corechart','table','controls']});
-</script>
-<script type='text/javascript'>
+
+    </script>
+    <script type='text/javascript'>
 
     /** global variables **/
     var hnode_status_data;
@@ -618,19 +619,6 @@
         });
     }
 
-    /* actual function loading and visualizing statistical summary table */ 
-    function loadStatSummary(panel) {
-
-        panel.find('.loading').show();
-
-        // load cluster utilization history
-        var jqx = $.get( "cgi-bin/get_statistic_summary.py", function( data ) {
-            document.getElementById('stat_summary').innerHTML = '<pre>' + data + '</pre>';
-        }, 'text' );
-
-        panel.find('.loading').hide();
-    }
-
     /* actual function loading and visualizing job efficiency history */ 
     function loadJobEfficiencyHistory(panel) {
 
@@ -663,34 +651,9 @@
                 if ( ! cluster_util_data ) loadClusterUtilizationHistory(panel);
                 break;
 
-            case 3: // display accordion in the statistics tab 
-                $( "#statistics_accordion" ).accordion({active  : 0, heightStyle : "fill", collapsible: true,
-                                                        create  : function(event, ui) { loadStatisticsAccordion(jQuery(this).find("h3").index(ui.header), ui.panel); },
-                                                        activate: function(event, ui) { loadStatisticsAccordion(jQuery(this).find("h3").index(ui.newHeader), ui.newPanel); }});
-
-                break;
-
             default:
                 loadDummy(panel);
                 break; 
-        }
-    }
-
-    /* wrapper function for drawing various visualization concerning statistics */ 
-    function loadStatisticsAccordion(idx, panel) {
-       
-        switch(idx) {
-            case 0:   // cluster utilization history 
-                loadStatSummary(panel);
-                break;
-
-//            case 1:   // job efficiency 
-//                if ( ! job_eff_wtime_data ) loadJobEfficiencyHistory(panel);
-//                break;
-
-            default:
-                loadDummy(panel);
-                break;
         }
     }
 
@@ -723,122 +686,65 @@
 
         });
     });
-</script>
+
+    </script>
 </head>
 <body>
 <div id="tabs">
-  
-  <!-- define the tabs -->
-  <ul>
-    <li><a href="#hnode_status_dashboard">Headnode Status</a></li>
-    <li><a href="#status_dashboard">Cluster Status</a></li>
-    <li><a href="#cluster_util_dashboard">Cluster Utilisation</a></li>
-    <li><a href="#statistics_dashboard">Job Statistics</a></li>
-  </ul>
 
-  <!-- tab content for cluster status -->
-  <div id="hnode_status_dashboard" style="width:1024px;">
-    <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
-    <table style="border-width:0px;">
-      <tr>
-      <td id="hnode_status_t_update" colspan="2" style="border-width:0px; padding:10px"></td>
-      </tr>
-      <tr>
-      <td id="hnode_tcore_filter"  style="border-width:0px; padding:10px"></td>
-      <td id="hnode_tmem_filter"   style="border-width:0px; padding:10px"></td>
-      </tr>
-    </table>
-    <div id="hnode_data_table"   style="width:1024px;"></div>
-  </div>
-
-  <!-- tab content for cluster status -->
-  <div id="status_dashboard" style="width:1024px;">
-    <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
-    <table style="border-width:0px;">
-      <tr>
-      <td id="status_t_update" colspan="4" style="border-width:0px; padding:10px"></td>
-      </tr>
-      <tr>
-      <td id="fcore_filter"  style="border-width:0px; padding:10px"></td>
-      <td id="fmem_filter"   style="border-width:0px; padding:10px"></td>
-      <td id="func_selector" style="border-width:0px; padding:10px">
-          <select id="node_func" style="display:none;" class="form-control input-sm">
-          <option value="all">All</option>
-          <option value="interactive">Interactive</option>
-          <option value="matlab">Matlab</option>
-          <option value="vgl">VirtualGL</option>
-          <option value="batch">Batch</option>
-          </select>
-      </td>
-      </tr>
-    </table>
-    <div id="data_table"   style="width:1024px;"></div>
-  </div>
-
-  <!-- tab content for cluster utilization history -->
-  <div id="cluster_util_dashboard" style="width:1024px;">
-    <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
-    <div id="njobs_chart"  style="width:950px; height:200px;"></div>
-    <div id="nrjobs_chart" style="width:950px; height:200px;"></div>
-    <div id="njobs_ctrl"   style="width:950px; height:70px;"></div>
-  </div>
-
-  <!-- tab content for historical statistics -->
-  <div id="statistics_dashboard" style="width:1024px; height:900px">
-    <ul id="statistics_accordion">
-
-<!--
-      <li>
-        <h3><a href="#">Cluster utilization history</a></h3>
-        <div id="njobs">
-          <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
-          <div id="njobs_chart"  style="width:950px; height:200px;"></div>
-          <div id="nrjobs_chart" style="width:950px; height:200px;"></div>
-          <div id="njobs_ctrl"   style="width:950px; height:70px;"></div>
-        </div>
-      </li>
--->
-      <li>
-        <h3><a href="#">Summary</a></h3>
-        <div id="stat_summary">
-          <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
-        </div>
-      </li>
-
-      <li>
-        <h3><a href="#">Job waiting time</a></h3>
-        <div id="stat_qtime">
-          <img src="cgi-bin/get_statistic_plots.py?stat=qtime" style="width:950px;"/>
-        </div>
-      </li>
-
-      <li>
-        <h3><a href="#">Memory utilization fraction</a></h3>
-        <div id="stat_eff_mem">
-          <img src="cgi-bin/get_statistic_plots.py?stat=eff_mem" style="width:950px;"/>
-        </div>
-      </li>
-
-      <li>
-        <h3><a href="#">CPU utilization fraction</a></h3>
-        <div id="stat_eff_cpu">
-          <img src="cgi-bin/get_statistic_plots.py?stat=eff_cpu" style="width:950px;"/>
-        </div>
-      </li>
-
-<!--
-      <li>
-        <h3><a href="#">Job efficiency</a></h3>
-        <div id="rsrc_efficiency">
-          <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
-          <div id="jstat_eff_wtime" style="width:950px; height:200px;"></div>
-          <div id="jstat_eff_mem"   style="width:950px; height:200px;"></div>
-          <div id="jstat_cpu_util"  style="width:950px; height:200px;"></div>
-        </div>
-      </li>
--->
+    <!-- define the tabs -->
+    <ul>
+        <li><a href="#hnode_status_dashboard">Headnode Status</a></li>
+        <li><a href="#status_dashboard">Cluster Status</a></li>
+        <li><a href="#cluster_util_dashboard">Cluster Utilisation</a></li>
     </ul>
-  </div>
+
+    <!-- tab content for cluster status -->
+    <div id="hnode_status_dashboard" style="width:1024px;">
+        <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ...</div>
+        <table style="border-width:0px;">
+            <tr>
+                <td id="hnode_status_t_update" colspan="2" style="border-width:0px; padding:10px"></td>
+            </tr>
+            <tr>
+                <td id="hnode_tcore_filter" style="border-width:0px; padding:10px"></td>
+                <td id="hnode_tmem_filter" style="border-width:0px; padding:10px"></td>
+            </tr>
+        </table>
+        <div id="hnode_data_table" style="width:1024px;"></div>
+    </div>
+
+    <!-- tab content for cluster status -->
+    <div id="status_dashboard" style="width:1024px;">
+        <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ...</div>
+        <table style="border-width:0px;">
+            <tr>
+                <td id="status_t_update" colspan="4" style="border-width:0px; padding:10px"></td>
+            </tr>
+            <tr>
+                <td id="fcore_filter" style="border-width:0px; padding:10px"></td>
+                <td id="fmem_filter" style="border-width:0px; padding:10px"></td>
+                <td id="func_selector" style="border-width:0px; padding:10px">
+                    <select id="node_func" style="display:none;" class="form-control input-sm">
+                        <option value="all">All</option>
+                        <option value="interactive">Interactive</option>
+                        <option value="matlab">Matlab</option>
+                        <option value="vgl">VirtualGL</option>
+                        <option value="batch">Batch</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+        <div id="data_table" style="width:1024px;"></div>
+    </div>
+
+    <!-- tab content for cluster utilization history -->
+    <div id="cluster_util_dashboard" style="width:1024px;">
+        <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ...</div>
+        <div id="njobs_chart" style="width:950px; height:200px;"></div>
+        <div id="nrjobs_chart" style="width:950px; height:200px;"></div>
+        <div id="njobs_ctrl" style="width:950px; height:70px;"></div>
+    </div>
 
 </div>
 </body>
