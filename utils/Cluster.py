@@ -291,7 +291,7 @@ def get_mentat_node_properties(debug=False):
     re_top_ps    = re.compile('^[\d|\.]+\s+[\d|\.]+\s+[\d]+.*$')
     nodes = []
 
-    if rc != 0:
+    if rc not in [0,255]:
         logger.error('command \'%s\' return non-exit code: %d' % (cmd, rc))
     else:
         for l in output.split('\n'):
@@ -562,7 +562,7 @@ def get_qstat_jobs(s_cmd, node_domain_suffix='dccn.nl', debug=False):
                              #'((((dccn-c\d+)/(\d+\+?))|-{2,}){1,})$' )   # computer node and session
 
     if rc != 0:
-        logger.error('command %s return non-exit code: %d' % (cmd, rc))
+        logger.error('command %s return non-exit code: %d' % (s_cmd, rc))
     else:
 
         def __apply_domain_suffix__(node_hostname):

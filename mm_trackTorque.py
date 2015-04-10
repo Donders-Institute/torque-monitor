@@ -71,7 +71,10 @@ def __sqlite_hnode_status__(nodes):
     data = []
 
     for n in nodes:
-        data.append( (int(time.mktime(now.timetuple())), n.host, n.ncores, n.mem, n.nxvnc, n.load_1m, n.load_5m, n.load_10m, n.total_ps, '|'.join(n.top_ps)) )
+        # it does not make sense if host's ncore is 0.
+        # TODO: maybe mark the host with ncore=0 as 'down' 
+        if n.ncores > 0:
+            data.append( (int(time.mktime(now.timetuple())), n.host, n.ncores, n.mem, n.nxvnc, n.load_1m, n.load_5m, n.load_10m, n.total_ps, '|'.join(n.top_ps)) )
 
     logger.debug(data)
 
@@ -180,7 +183,10 @@ def __tab_hnode_status__(nodes):
     t.field_names = ['node','ncores','memory','Xvnc sessions','10min. load','total procs.']
 
     for n in nodes:
-        t.add_row( [n.host, n.ncores, n.mem, n.nxvnc, n.load_10m, n.total_ps] )
+        # it does not make sense if host's ncore is 0.
+        # TODO: maybe mark the host with ncore=0 as 'down' 
+        if n.ncores > 0:
+            t.add_row( [n.host, n.ncores, n.mem, n.nxvnc, n.load_10m, n.total_ps] )
 
     print t
 
@@ -446,9 +452,10 @@ if __name__ == "__main__":
 
     report_jqueued(jlist)
 
-    # stop processing if there are no running jobs
+    # initialize with an empty array when there are no running jobs
     if 'R' not in jlist.keys():
-        sys.exit()
+        jlist['R'] = []
+        #sys.exit()
 
     # get list of active nodes on which the jobs are running
     #jnodes = set(map(lambda x:x.node, jlist['R']))
@@ -516,6 +523,10 @@ if __name__ == "__main__":
     
     # number of idling cores
     summeas['idling_cores'] = sum(map(lambda x:x.ncores_idle, cnodes))
+
+    # number of interactive jobs
+    summeas['n_inter_jobs']    = len(filter(lambda x:x.queue=='interact', jlist['R']))
+    summeas['n_noninter_jobs'] = len(filter(lambda x:x.queue!='interact', jlist['R'])) 
     
     # memory left per idling core on machines with 32GB or less
     summeas['memleft_per_core_u33'] = mean( map( lambda x:x.memleft_c,
@@ -534,16 +545,19 @@ if __name__ == "__main__":
                                                    filter(lambda x:x.memleft_c != None and x.ncores_inter == 0, cnodes) ) )
     
     # memory left per idling core on nodes that do run interactive jobs
-    summeas['memleft_per_core_oninter'] = mean( map( lambda x:x.memleft_c,
-                                                filter(lambda x:x.memleft_c != None and x.ncores_inter > 0, cnodes) ) )
-
-    # number of interactive jobs
-    summeas['n_inter_jobs']    = len(filter(lambda x:x.queue=='interact', jlist['R']))
-    summeas['n_noninter_jobs'] = len(filter(lambda x:x.queue!='interact', jlist['R'])) 
+    if summeas['n_inter_jobs'] == 0:
+        summeas['memleft_per_core_oninter'] = None
+    else:
+        summeas['memleft_per_core_oninter'] = mean( map( lambda x:x.memleft_c,
+                                                    filter(lambda x:x.memleft_c != None and x.ncores_inter > 0, cnodes) ) )
     
     # determine requested memory and walltime
-    summeas['memall']  = mean(map(lambda x:x.rmem , jlist['R']))
-    summeas['wallall'] = mean(map(lambda x:x.rtime, jlist['R']))
+    if len(jlist['R']) == 0:
+        summeas['memall']  = None
+        summeas['wallall'] = None
+    else:
+        summeas['memall']  = mean(map(lambda x:x.rmem , jlist['R']))
+        summeas['wallall'] = mean(map(lambda x:x.rtime, jlist['R']))
 
     # set walltime and memory to None if there are no jobs of that nature.
     # non-interactive jobs
