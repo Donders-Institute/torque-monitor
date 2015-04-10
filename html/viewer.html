@@ -13,7 +13,7 @@
 <script type='text/javascript' src='js/util.js'></script>
 <script type='text/javascript' src='https://www.google.com/jsapi'></script>
 <script type='text/javascript'>
-    google.load('visualization', '1', {packages:['corechart','table','controls']});
+    google.load('visualization', '1.0', {packages:['corechart','table','controls']});
 </script>
 <script type='text/javascript'>
 
@@ -313,7 +313,8 @@
                 top_ps_html += "</table>";
 
                 hnode_status_data.addRow([new Date(obj[i].timestamp * 1000 ),
-                                          obj[i].host,
+                                          //obj[i].host,
+                                          obj[i].host.replace('.dccn.nl',''),
                                           obj[i].mem,
                                           obj[i].ncores,
                                           obj[i].nxvnc,
@@ -346,7 +347,7 @@
             if (selectedItem) {
                 var node = hnode_status_data.getValue(tab_view.getTableRowIndex(selectedItem.row), 1);
 
-                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Mentat+Cluster&h=" + node + "&mc=2",
+                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Mentat+Cluster&h=" + node + ".dccn.nl&mc=2",
                             iframe : true,
                             width  : "80%",
                             height : "80%"});
@@ -434,7 +435,8 @@
             } else {
 
                 cluster_status_data.addRow([new Date(obj[i].timestamp * 1000 ),
-                                 obj[i].host,
+                                 //obj[i].host,
+                                 obj[i].host.replace('.dccn.nl',''),
                                  obj[i].cpu,
                                  parseInt(obj[i].net.replace("GigE","")),
                                  100 * obj[i].mem_left / obj[i].mem,
@@ -503,7 +505,7 @@
             if (selectedItem) {
                 var node = cluster_status_data.getValue(tab_view.getTableRowIndex(selectedItem.row), 1);
 
-                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Torque+Cluster&h=" + node + "&mc=2",
+                $.colorbox({href   : "http://ganglia.dccn.nl/?r=day&c=Torque+Cluster&h=" + node + ".dccn.nl&mc=2",
                             iframe : true,
                             width  : "80%",
                             height : "80%"});
@@ -618,19 +620,6 @@
         });
     }
 
-    /* actual function loading and visualizing statistical summary table */ 
-    function loadStatSummary(panel) {
-
-        panel.find('.loading').show();
-
-        // load cluster utilization history
-        var jqx = $.get( "cgi-bin/get_statistic_summary.py", function( data ) {
-            document.getElementById('stat_summary').innerHTML = '<pre>' + data + '</pre>';
-        }, 'text' );
-
-        panel.find('.loading').hide();
-    }
-
     /* actual function loading and visualizing job efficiency history */ 
     function loadJobEfficiencyHistory(panel) {
 
@@ -663,34 +652,9 @@
                 if ( ! cluster_util_data ) loadClusterUtilizationHistory(panel);
                 break;
 
-            case 3: // display accordion in the statistics tab 
-                $( "#statistics_accordion" ).accordion({active  : 0, heightStyle : "fill", collapsible: true,
-                                                        create  : function(event, ui) { loadStatisticsAccordion(jQuery(this).find("h3").index(ui.header), ui.panel); },
-                                                        activate: function(event, ui) { loadStatisticsAccordion(jQuery(this).find("h3").index(ui.newHeader), ui.newPanel); }});
-
-                break;
-
             default:
                 loadDummy(panel);
                 break; 
-        }
-    }
-
-    /* wrapper function for drawing various visualization concerning statistics */ 
-    function loadStatisticsAccordion(idx, panel) {
-       
-        switch(idx) {
-            case 0:   // cluster utilization history 
-                loadStatSummary(panel);
-                break;
-
-//            case 1:   // job efficiency 
-//                if ( ! job_eff_wtime_data ) loadJobEfficiencyHistory(panel);
-//                break;
-
-            default:
-                loadDummy(panel);
-                break;
         }
     }
 
@@ -781,63 +745,6 @@
     <div id="njobs_chart"  style="width:950px; height:200px;"></div>
     <div id="nrjobs_chart" style="width:950px; height:200px;"></div>
     <div id="njobs_ctrl"   style="width:950px; height:70px;"></div>
-  </div>
-
-  <!-- tab content for historical statistics -->
-  <div id="statistics_dashboard" style="width:1024px; height:900px">
-    <ul id="statistics_accordion">
-
-<!--
-      <li>
-        <h3><a href="#">Cluster utilization history</a></h3>
-        <div id="njobs">
-          <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
-          <div id="njobs_chart"  style="width:950px; height:200px;"></div>
-          <div id="nrjobs_chart" style="width:950px; height:200px;"></div>
-          <div id="njobs_ctrl"   style="width:950px; height:70px;"></div>
-        </div>
-      </li>
--->
-      <li>
-        <h3><a href="#">Summary</a></h3>
-        <div id="stat_summary">
-          <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
-        </div>
-      </li>
-
-      <li>
-        <h3><a href="#">Job waiting time</a></h3>
-        <div id="stat_qtime">
-          <img src="cgi-bin/get_statistic_plots.py?stat=qtime" style="width:950px;"/>
-        </div>
-      </li>
-
-      <li>
-        <h3><a href="#">Memory utilization fraction</a></h3>
-        <div id="stat_eff_mem">
-          <img src="cgi-bin/get_statistic_plots.py?stat=eff_mem" style="width:950px;"/>
-        </div>
-      </li>
-
-      <li>
-        <h3><a href="#">CPU utilization fraction</a></h3>
-        <div id="stat_eff_cpu">
-          <img src="cgi-bin/get_statistic_plots.py?stat=eff_cpu" style="width:950px;"/>
-        </div>
-      </li>
-
-<!--
-      <li>
-        <h3><a href="#">Job efficiency</a></h3>
-        <div id="rsrc_efficiency">
-          <div class="loading" style="display:none;"><img src="images/loading.gif"/>Loading data ... </div>
-          <div id="jstat_eff_wtime" style="width:950px; height:200px;"></div>
-          <div id="jstat_eff_mem"   style="width:950px; height:200px;"></div>
-          <div id="jstat_cpu_util"  style="width:950px; height:200px;"></div>
-        </div>
-      </li>
--->
-    </ul>
   </div>
 
 </div>
