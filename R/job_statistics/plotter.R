@@ -108,6 +108,10 @@ hr_ticks_5d <- append(hr_ticks_3d, c(96,120))
 GB_ticks    <- c(0,4,8,16,32,64,128,256)
 frac_ticks  <- seq(0,100,10)
 
+hr_range_3d <- c(0,72)
+hr_range_5d <- c(0,120)
+GB_range    <- c(0,256)
+
 ## writing statistical summary to file ##
 f_summary <- file( paste(plot_odir, paste('summary',o_suffix,'.txt', sep=''), sep='/' ) )
 sink( file=f_summary, type = c('output') )
@@ -122,11 +126,11 @@ close(f_summary)
 ggsave(filename = paste(plot_odir, paste('qtime_queue_scatter', o_suffix, '.png',sep=''), sep='/'),
        plot     = ggplot(job_data, aes(y=1.0*(t_start-t_queue)/3600., x=queue)) +
                          geom_jitter(aes(color=cstat), alpha=0.5, size=1) + 
-                         geom_boxplot(outlier.shape=NA, alpha=0.5, notch=TRUE) +
+                         geom_boxplot(outlier.shape=NA, alpha=0.5) +
                          ggtitle(paste('Job Waiting Time', t_suffix ,sep=' ')) +
                          xlab('queue') +
                          ylab('hours') +
-                         scale_y_continuous(breaks=hr_ticks_5d) +
+                         scale_y_continuous(breaks=hr_ticks_3d, limits=hr_range_3d) +
                          legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -136,11 +140,11 @@ ggsave(filename = paste(plot_odir, paste('qtime_queue_scatter', o_suffix, '.png'
 ggsave(filename = paste(plot_odir, paste('rwtime_queue_scatter', o_suffix, '.png',sep=''), sep='/'),
        plot     = ggplot(job_data, aes(y=rwtime/3600., x=queue)) +
                          geom_jitter(aes(color=cstat), alpha=0.5, size=1) + 
-                         geom_boxplot(outlier.shape=NA, alpha=0.5, notch=TRUE) +
+                         geom_boxplot(outlier.shape=NA, alpha=0.5) +
                          ggtitle(paste('Job Walltime Request', t_suffix, sep=' ')) +
                          xlab('queue') +
                          ylab('hours') +
-                         scale_y_continuous(breaks=hr_ticks_3d) +
+                         scale_y_continuous(breaks=hr_ticks_3d, limits=hr_range_3d) +
                          legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -150,11 +154,11 @@ ggsave(filename = paste(plot_odir, paste('rwtime_queue_scatter', o_suffix, '.png
 ggsave(filename = paste(plot_odir, paste('cwtime_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
        plot     = ggplot(job_data, aes(y=cwtime/3600., x=queue)) +
                          geom_jitter(aes(color=cstat), alpha=0.5, size=1) + 
-                         geom_boxplot(outlier.shape=NA, alpha=0.5, notch=TRUE) +
+                         geom_boxplot(outlier.shape=NA, alpha=0.5) +
                          ggtitle(paste('Job Walltime Consumption', t_suffix, sep=' ')) +
                          xlab('queue') +
                          ylab('hours') +
-                         scale_y_continuous(breaks=hr_ticks_3d) +
+                         scale_y_continuous(breaks=hr_ticks_3d, limits=hr_range_3d) +
                          legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -164,11 +168,11 @@ ggsave(filename = paste(plot_odir, paste('cwtime_queue_scatter', o_suffix, '.png
 ggsave(filename = paste(plot_odir, paste('cctime_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
        plot     = ggplot(job_data, aes(y=cctime/3600., x=queue)) +
                          geom_jitter(aes(color=cstat), alpha=0.5, size=1) + 
-                         geom_boxplot(outlier.shape=NA, alpha=0.5, notch=TRUE) +
+                         geom_boxplot(outlier.shape=NA, alpha=0.5) +
                          ggtitle(paste('Job CPUtime Consumption', t_suffix, sep=' ')) +
                          xlab('queue') +
                          ylab('hours') +
-                         scale_y_continuous(breaks=hr_ticks_3d) +
+                         scale_y_continuous(breaks=hr_ticks_3d, limits=hr_range_3d) +
                          legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -178,11 +182,11 @@ ggsave(filename = paste(plot_odir, paste('cctime_queue_scatter', o_suffix, '.png
 ggsave(filename = paste(plot_odir, paste('eff_cpu_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
        plot     = ggplot(job_data, aes(y=100.*cctime/cwtime, x=queue)) +
                          geom_jitter(aes(color=cstat), alpha=0.5, size=1) + 
-                         geom_boxplot(outlier.shape=NA, alpha=0.5, notch=TRUE) +
+                         geom_boxplot(outlier.shape=NA, alpha=0.5) +
                          ggtitle(paste('Job CPU Utilization Fraction', t_suffix, sep=' ')) +
                          xlab('queue') +
                          ylab('percent') +
-                         scale_y_continuous(breaks=frac_ticks) +
+                         scale_y_continuous(breaks=frac_ticks, limits=c(0,100)) +
                          legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -192,11 +196,11 @@ ggsave(filename = paste(plot_odir, paste('eff_cpu_queue_scatter', o_suffix, '.pn
 ggsave(filename = paste(plot_odir, paste('rmem_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
        plot     = ggplot(job_data, aes(y=rmem, x=queue)) +
                          geom_jitter(aes(color=cstat), alpha=0.5, size=1) + 
-                         geom_boxplot(outlier.shape=NA, alpha=0.5, notch=TRUE) +
+                         geom_boxplot(outlier.shape=NA, alpha=0.5) +
                          ggtitle(paste('Job Memory Request', t_suffix, sep=' ')) +
                          xlab('queue') +
                          ylab('gigabytes') +
-                         scale_y_continuous(breaks=GB_ticks) +
+                         scale_y_continuous(breaks=GB_ticks, limits=GB_range) +
                          legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -206,11 +210,11 @@ ggsave(filename = paste(plot_odir, paste('rmem_queue_scatter', o_suffix, '.png',
 ggsave(filename = paste(plot_odir, paste('cmem_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
        plot     = ggplot(job_data, aes(y=cmem, x=queue)) +
                          geom_jitter(aes(color=cstat), alpha=0.5, size=1) + 
-                         geom_boxplot(outlier.shape=NA, alpha=0.5, notch=TRUE) +
+                         geom_boxplot(outlier.shape=NA, alpha=0.5) +
                          ggtitle(paste('Job Memory Consumption',t_suffix,sep=' ')) +
                          xlab('queue') +
                          ylab('gigabytes') +
-                         scale_y_continuous(breaks=GB_ticks) +
+                         scale_y_continuous(breaks=GB_ticks, limits=GB_range) +
                          legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -220,11 +224,11 @@ ggsave(filename = paste(plot_odir, paste('cmem_queue_scatter', o_suffix, '.png',
 ggsave(filename = paste(plot_odir,paste('eff_mem_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
        plot     = ggplot(job_data, aes(y=100.*cmem/rmem, x=queue)) +
                          geom_jitter(aes(color=cstat), alpha=0.5, size=1) + 
-                         geom_boxplot(outlier.shape=NA, alpha=0.5, notch=TRUE) +
+                         geom_boxplot(outlier.shape=NA, alpha=0.5) +
                          ggtitle(paste('Job Memory Utilization Fraction',t_suffix,sep=' ')) +
                          xlab('queue') +
                          ylab('percent') +
-                         scale_y_continuous(breaks=frac_ticks) +
+                         scale_y_continuous(breaks=frac_ticks, limits=c(0,100)) +
                          legend_labels + legend_style,
        width    = 27,
        height   = 21,
