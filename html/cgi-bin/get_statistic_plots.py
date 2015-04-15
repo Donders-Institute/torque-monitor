@@ -34,7 +34,7 @@ if __name__ == "__main__":
     params = cgiFieldStorageToDict( cgi.FieldStorage() )
 
     ### arguments
-    period = time.strftime('%Y%m') 
+    period = time.strftime('%Y%m')
     try:
         period = params['period']
     except KeyError, e:
@@ -46,7 +46,16 @@ if __name__ == "__main__":
     except KeyError, e:
         pass
 
-    img_fpath = os.path.join( IMAGE_DIR, '%s_queue_scatter_%s.png' % (stat, period) )
+    type = 'scatter'
+    try:
+        type = params['type']
+    except KeyError, e:
+        pass
+
+    if type == 'evolution':
+        img_fpath = os.path.join( IMAGE_DIR, '%s_evolution_monthly.png' % stat )
+    else:
+        img_fpath = os.path.join( IMAGE_DIR, '%s_queue_scatter_%s.png' % (stat, period) )
 
     logger.debug('loading image: %s' % img_fpath)
 
