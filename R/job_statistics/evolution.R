@@ -44,6 +44,7 @@ drv <- dbDriver('SQLite')
 
 df <- data.frame('month' = character(0),
                  'queue' = character(0),
+                 'njobs' = numeric(0),
                  'rwtime_m' = numeric(0),
                  'rwtime_u' = numeric(0),
                  'rwtime_d' = numeric(0),
@@ -99,7 +100,7 @@ for (f in db_files) {
             sd_r <- subset(sd, ! is.na(rmem) & rmem > 0 )
 
             mem_eff_stat <- quantile(100 * sd_r$cmem / sd_r$rmem, probs = qpts, names=FALSE, na.rm = TRUE)
-            df <- rbind(df, data.frame(month = db_month, queue = q,
+            df <- rbind(df, data.frame(month = db_month, queue = q, njobs = nrow(sd),
                                        rwtime_m = rwtime_stat[1],
                                        rwtime_d = rwtime_stat[2],
                                        rwtime_u = rwtime_stat[3],
@@ -150,6 +151,22 @@ date_label_fmt <- "%b"
 if (length( db_files ) > 11 ) {
     date_label_fmt <- "'%y-%m"
 }
+
+# number of jobs per queue
+ggsave(filename = paste(plot_odir, 'njobs_evolution_monthly.png', sep='/'),
+       plot     = ggplot(df, aes(x=month, y=njobs, fill=queue, order=queue)) +
+                         geom_bar(stat='identity', position='stack') +
+                         ggtitle('Evolution of job count') +
+                         xlab('month') +
+                         ylab('count') +
+                         theme_bw() +
+                         theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+                         scale_fill_hue(l=45) +
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")),
+##                         legend_labels + legend_style,
+       width    = 27,
+       height   = 15,
+       units    = 'cm')
 
 # requested memory
 ggsave(filename = paste(plot_odir, 'rmem_evolution_monthly.png', sep='/'),
