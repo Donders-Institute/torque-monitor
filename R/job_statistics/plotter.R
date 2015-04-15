@@ -224,7 +224,7 @@ ggsave(filename = paste(plot_odir, paste('rmem_queue_scatter', o_suffix, '.png',
                          theme_bw() +
                          theme(legend.position="none") +
                          scale_fill_hue(l=45) +
-                         scale_y_continuous(breaks=GB_ticks, limits=GB_range),
+                         scale_y_continuous(breaks=GB_ticks),
                          #legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -242,7 +242,7 @@ ggsave(filename = paste(plot_odir, paste('cmem_queue_scatter', o_suffix, '.png',
                          theme_bw() +
                          theme(legend.position="none") +
                          scale_fill_hue(l=45) +
-                         scale_y_continuous(breaks=GB_ticks, limits=GB_range),
+                         scale_y_continuous(breaks=GB_ticks),
                          #legend_labels + legend_style,
        width    = 27,
        height   = 21,
