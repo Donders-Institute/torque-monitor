@@ -491,11 +491,17 @@
                 if ( ! accounting_data ) loadAccounting(panel);
                 break;
 
-            case 1: // display accordion in the statistics tab
+            case 1: // display accordion for job statistics of the month
                 $( "#statistics_accordion" ).accordion({active  : 0, heightStyle : "fill", collapsible: true,
                                                         create  : function(event, ui) { loadStatisticsAccordion(jQuery(this).find("h3").index(ui.header), ui.panel); },
                                                         activate: function(event, ui) { loadStatisticsAccordion(jQuery(this).find("h3").index(ui.newHeader), ui.newPanel); }});
 
+                break;
+
+            case 2: // display accordion for job statistics evolution
+                $( "#evolution_accordion" ).accordion({active  : 0, heightStyle : "fill", collapsible: true,
+                                                        create  : function(event, ui) { loadDummy(ui.panel); },
+                                                        activate: function(event, ui) { loadDummy(ui.newPanel); }});
                 break;
 
             default:
@@ -511,10 +517,6 @@
             case 0:   // cluster utilization history
                 loadStatSummary(panel);
                 break;
-
-//            case 1:   // job efficiency
-//                if ( ! job_eff_wtime_data ) loadJobEfficiencyHistory(panel);
-//                break;
 
             default:
                 loadDummy(panel);
@@ -558,6 +560,7 @@
     <ul>
         <li><a href="#accounting_dashboard">Accounting</a></li>
         <li><a href="#statistics_dashboard">Job Statistics</a></li>
+        <li><a href="#evolution_dashborad">Job Stat. Evolution</a></li>
     </ul>
 
     <!-- tab content for cluster status -->
@@ -602,7 +605,7 @@
         <div id="data_table" style="width:1200px;"></div>
     </div>
 
-    <!-- tab content for historical statistics -->
+    <!-- plots for statistics of the month -->
     <div id="statistics_dashboard" style="width:1024px; height:900px">
         <ul id="statistics_accordion">
             <li>
@@ -650,6 +653,51 @@
 
                 <div id="stat_eff_cpu">
                     <img src="cgi-bin/get_statistic_plots.py?stat=eff_cpu" style="width:950px;"/>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- plots for statistics evolution -->
+    <div id="evolution_dashboard" style="width:1024px; height:900px">
+        <ul id="evolution_accordion">
+            <li>
+                <h3><a href="#">Memory request</a></h3>
+
+                <div id="evol_rmem">
+                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=rmem" style="width:950px;"/>
+                </div>
+            </li>
+
+            <li>
+                <h3><a href="#">Memory consumption</a></h3>
+
+                <div id="evol_cmem">
+                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=cmem" style="width:950px;"/>
+                </div>
+            </li>
+
+            <li>
+                <h3><a href="#">Memory utilization fraction</a></h3>
+
+                <div id="evol_eff_mem">
+                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=eff_mem" style="width:950px;"/>
+                </div>
+            </li>
+
+           <li>
+                <h3><a href="#">Walltime request</a></h3>
+
+                <div id="evol_rwtime">
+                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=rwtime" style="width:950px;"/>
+                </div>
+            </li>
+
+            <li>
+                <h3><a href="#">Walltime consumption</a></h3>
+
+                <div id="evol_cwtime">
+                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=cwtime" style="width:950px;"/>
                 </div>
             </li>
         </ul>
