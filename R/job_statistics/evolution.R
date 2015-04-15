@@ -1,7 +1,6 @@
 library('ggplot2')
 library('grid')
 library('RSQLite')
-library('zoo')
 library('scales')
 
 args <- commandArgs(TRUE)
@@ -71,7 +70,7 @@ qpts <- c(0.5, 0.25, 0.75, 0, 1)
 
 # each db file contains jobs submitted within the month
 for (f in db_files) {
-    db_month   <- as.Date(as.yearmon(sub('.db','',sub('mm_trackTorqueJobs_','',f)),"%Y%m"))
+    db_month   <- as.Date(paste(sub('.db','',sub('mm_trackTorqueJobs_','',f)),"01"),"%Y%m%d")
     #db_month   <- sub('.db','',sub('mm_trackTorqueJobs_','',f))
     db_fpath   <- paste(db_dpath,f,sep='/')
     print( paste('Quering database',db_fpath,sep=' '))
