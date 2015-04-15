@@ -147,8 +147,8 @@ GB_range    <- c(0,256)
 
 date_label_fmt <- "%b"
 
-if (length( db_files ) > 12 ) {
-    date_label_fmt <- "'%y.%m"
+if (length( db_files ) > 11 ) {
+    date_label_fmt <- "'%y-%m"
 }
 
 # requested memory
@@ -163,7 +163,7 @@ ggsave(filename = paste(plot_odir, 'rmem_evolution_monthly.png', sep='/'),
                          xlab('month') +
                          ylab('GB') +
                          theme_bw() +
-                         theme(legend.position="none") +
+                         theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
                          scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
 			             scale_y_continuous(breaks=GB_ticks),
 ##                         legend_labels + legend_style,
@@ -183,7 +183,7 @@ ggsave(filename = paste(plot_odir, 'cmem_evolution_monthly.png', sep='/'),
                          xlab('month') +
                          ylab('GB') +
                          theme_bw() +
-                         theme(legend.position="none") +
+                         theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
                          scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
 			             scale_y_continuous(breaks=GB_ticks),
 ##                         legend_labels + legend_style,
@@ -203,7 +203,7 @@ ggsave(filename = paste(plot_odir, 'mem_eff_evolution_monthly.png', sep='/'),
                          xlab('month') +
                          ylab('%') +
                          theme_bw() +
-                         theme(legend.position="none") +
+                         theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
                          scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
 			             scale_y_continuous(breaks=frac_ticks, limits=c(0,100)),
 ##                         legend_labels + legend_style,
@@ -223,7 +223,7 @@ ggsave(filename = paste(plot_odir, 'rwtime_evolution_monthly.png', sep='/'),
                          xlab('month') +
                          ylab('hour') +
                          theme_bw() +
-                         theme(legend.position="none") +
+                         theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
                          scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
 			             scale_y_continuous(breaks=hr_ticks_3d),
 ##                         legend_labels + legend_style,
@@ -243,7 +243,7 @@ ggsave(filename = paste(plot_odir, 'cwtime_evolution_monthly.png', sep='/'),
                          xlab('month') +
                          ylab('hour') +
                          theme_bw() +
-                         theme(legend.position="none") +
+                         theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
                          scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
 			             scale_y_continuous(breaks=hr_ticks_3d),
 ##                         legend_labels + legend_style,
