@@ -70,6 +70,9 @@ df <- data.frame('month' = character(0),
 # define quantile/percentile points for (median, low, up, min, max)
 qpts <- c(0.5, 0.25, 0.75, 0, 1)
 
+# queue name of everything
+qname_everything = 'all'
+
 # each db file contains jobs submitted within the month
 for (f in db_files) {
     db_month   <- as.Date(paste(sub('.db','',sub('mm_trackTorqueJobs_','',f)),"01"),"%Y%m%d")
@@ -90,10 +93,45 @@ for (f in db_files) {
 
     if ( ! is.na(t_job_data) ) {
         # gets statistics of the month
-        #  - catagorized by job queues
+        #  - everything together
+        rwtime_stat <- quantile(t_job_data$rwtime / 3600., probs = qpts, names=FALSE, na.rm = TRUE)
+        cwtime_stat <- quantile(t_job_data$cwtime / 3600., probs = qpts, names=FALSE, na.rm = TRUE)
+        rmem_stat <- quantile(t_job_data$rmem, probs = qpts, names=FALSE, na.rm = TRUE)
+        cmem_stat <- quantile(t_job_data$cmem, probs = qpts, names=FALSE, na.rm = TRUE)
 
-        total_unique_users = length(unique(t_job_data$uid))
+        sd_r <- subset(t_job_data, ! is.na(rmem) & rmem > 0 )
+        mem_eff_stat <- quantile(100 * sd_r$cmem / sd_r$rmem, probs = qpts, names=FALSE, na.rm = TRUE)
 
+        df <- rbind(df, data.frame(month = db_month, queue = qname_everything,
+                                   njobs = nrow(t_job_data),
+                                   nusers = length(unique(t_job_data$uid)),
+                                   rwtime_m = rwtime_stat[1],
+                                   rwtime_d = rwtime_stat[2],
+                                   rwtime_u = rwtime_stat[3],
+                                   rwtime_min = rwtime_stat[4],
+                                   rwtime_max = rwtime_stat[5],
+                                   cwtime_m = cwtime_stat[1],
+                                   cwtime_d = cwtime_stat[2],
+                                   cwtime_u = cwtime_stat[3],
+                                   cwtime_min = cwtime_stat[4],
+                                   cwtime_max = cwtime_stat[5],
+                                   rmem_m = rmem_stat[1],
+                                   rmem_d = rmem_stat[2],
+                                   rmem_u = rmem_stat[3],
+                                   rmem_min = rmem_stat[4],
+                                   rmem_max = rmem_stat[5],
+                                   cmem_m = cmem_stat[1],
+                                   cmem_d = cmem_stat[2],
+                                   cmem_u = cmem_stat[3],
+                                   cmem_min = cmem_stat[4],
+                                   cmem_max = cmem_stat[5],
+                                   mem_eff_m = mem_eff_stat[1],
+                                   mem_eff_d = mem_eff_stat[2],
+                                   mem_eff_u = mem_eff_stat[3],
+                                   mem_eff_min = mem_eff_stat[4],
+                                   mem_eff_max = mem_eff_stat[5]))
+
+        #  - catagorized by job queue
         for (q in unique(t_job_data$queue)) {
             sd <- subset(t_job_data, queue == q)
             rwtime_stat <- quantile(sd$rwtime / 3600., probs = qpts, names=FALSE, na.rm = TRUE)
@@ -107,7 +145,6 @@ for (f in db_files) {
             df <- rbind(df, data.frame(month = db_month, queue = q,
                                        njobs = nrow(sd),
                                        nusers = length(unique(sd$uid)),
-                                       nutotal = total_unique_users,
                                        rwtime_m = rwtime_stat[1],
                                        rwtime_d = rwtime_stat[2],
                                        rwtime_u = rwtime_stat[3],
@@ -160,11 +197,10 @@ if (length( db_files ) > 11 ) {
 }
 
 # number of unique users per queue
-ggsave(filename = paste(plot_odir, 'nusers_evolution_monthly.png', sep='/'),
-       plot     = ggplot(df, aes(x=month, y=nusers, fill=queue, order=queue)) +
+ggsave(filename = paste(plot_odir, 'nusers_queue_evolution_monthly.png', sep='/'),
+       plot     = ggplot(df[df$queue != qname_everything, ], aes(x=month, y=nusers, fill=queue, order=queue)) +
                          geom_bar(stat='identity', position='stack') +
-                         geom_point(aes(x=month, y=nutotal)) +
-                         ggtitle('Evolution of unique user count') +
+                         ggtitle('Number of unique users counted by queue') +
                          xlab('month') +
                          ylab('count') +
                          theme_bw() +
@@ -176,11 +212,27 @@ ggsave(filename = paste(plot_odir, 'nusers_evolution_monthly.png', sep='/'),
        height   = 15,
        units    = 'cm')
 
+# number of unique users
+ggsave(filename = paste(plot_odir, 'nusers_all_evolution_monthly.png', sep='/'),
+       plot     = ggplot(df[df$queue == qname_everything, ], aes(x=month, y=nusers, fill=queue, order=queue)) +
+                         geom_bar(stat='identity', position='stack') +
+                         ggtitle('Number of unique users') +
+                         xlab('month') +
+                         ylab('count') +
+                         theme_bw() +
+                         theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
+                         scale_fill_hue(l=45) +
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")),
+##                         legend_labels + legend_style,
+       width    = 27,
+       height   = 15,
+       units    = 'cm')
+
 # number of jobs per queue
 ggsave(filename = paste(plot_odir, 'njobs_evolution_monthly.png', sep='/'),
-       plot     = ggplot(df, aes(x=month, y=njobs, fill=queue, order=queue)) +
+       plot     = ggplot(df[df$queue != qname_everything, ], aes(x=month, y=njobs, fill=queue, order=queue)) +
                          geom_bar(stat='identity', position='stack') +
-                         ggtitle('Evolution of job count') +
+                         ggtitle('Number of jobs') +
                          xlab('month') +
                          ylab('count') +
                          theme_bw() +
@@ -200,7 +252,7 @@ ggsave(filename = paste(plot_odir, 'rmem_evolution_monthly.png', sep='/'),
        #                  geom_ribbon(aes(ymax=rmem_u, ymin=rmem_d)) +
        #                  geom_line(aes(y=rmem_m)) +
                          facet_wrap(~ queue, ncol=3) +
-                         ggtitle('Evolution of requested memory') +
+                         ggtitle('Requested memory') +
                          xlab('month') +
                          ylab('GB') +
                          theme_bw() +
@@ -220,7 +272,7 @@ ggsave(filename = paste(plot_odir, 'cmem_evolution_monthly.png', sep='/'),
        #                  geom_ribbon(aes(ymax=cmem_u, ymin=cmem_d)) +
        #                  geom_line(aes(y=cmem_m)) +
                          facet_wrap(~ queue, ncol=3) +
-                         ggtitle('Evolution of consumed memory') +
+                         ggtitle('Consumed memory') +
                          xlab('month') +
                          ylab('GB') +
                          theme_bw() +
@@ -240,7 +292,7 @@ ggsave(filename = paste(plot_odir, 'mem_eff_evolution_monthly.png', sep='/'),
        #                  geom_ribbon(aes(ymax=mem_eff_u, ymin=mem_eff_d)) +
        #                  geom_line(aes(y=mem_eff_m)) +
                          facet_wrap(~ queue, ncol=3) +
-                         ggtitle('Evolution of memory utilisation fraction') +
+                         ggtitle('Memory utilisation fraction') +
                          xlab('month') +
                          ylab('%') +
                          theme_bw() +
@@ -260,7 +312,7 @@ ggsave(filename = paste(plot_odir, 'rwtime_evolution_monthly.png', sep='/'),
        #                  geom_ribbon(aes(ymax=rwtime_u, ymin=rwtime_d)) +
        #                  geom_line(aes(y=rwtime_m)) +
                          facet_wrap(~ queue, ncol=3) +
-                         ggtitle('Evolution of requested walltime') +
+                         ggtitle('Requested walltime') +
                          xlab('month') +
                          ylab('hour') +
                          theme_bw() +
@@ -280,7 +332,7 @@ ggsave(filename = paste(plot_odir, 'cwtime_evolution_monthly.png', sep='/'),
        #                  geom_ribbon(aes(ymax=cwtime_u, ymin=cwtime_d)) +
        #                  geom_line(aes(y=cwtime_m)) +
                          facet_wrap(~ queue, ncol=3) +
-                         ggtitle('Evolution of consumed walltime') +
+                         ggtitle('Consumed walltime') +
                          xlab('month') +
                          ylab('hour') +
                          theme_bw() +
