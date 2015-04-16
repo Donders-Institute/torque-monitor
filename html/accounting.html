@@ -485,7 +485,6 @@
         var pid = panel[0].id.split('_');
         var img_html = '<img src="cgi-bin/get_statistic_plots.py?type=' + pid[0] + '&stat=' + pid.slice(1).join('_') + '" style="width:950px;"/>';
 
-        console.log('img_html: ' + img_html);
         panel[0].innerHTML = img_html;
         setTimeout( function() { panel.find('.loading').hide(); }, 5000 );
     }
