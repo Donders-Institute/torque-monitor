@@ -45,6 +45,7 @@ drv <- dbDriver('SQLite')
 df <- data.frame('month' = character(0),
                  'queue' = character(0),
                  'njobs' = numeric(0),
+                 'nusers' = numeric(0),
                  'rwtime_m' = numeric(0),
                  'rwtime_u' = numeric(0),
                  'rwtime_d' = numeric(0),
@@ -90,6 +91,9 @@ for (f in db_files) {
     if ( ! is.na(t_job_data) ) {
         # gets statistics of the month
         #  - catagorized by job queues
+
+        total_unique_users = length(unique(t_job_data$uid))
+
         for (q in unique(t_job_data$queue)) {
             sd <- subset(t_job_data, queue == q)
             rwtime_stat <- quantile(sd$rwtime / 3600., probs = qpts, names=FALSE, na.rm = TRUE)
@@ -100,7 +104,10 @@ for (f in db_files) {
             sd_r <- subset(sd, ! is.na(rmem) & rmem > 0 )
 
             mem_eff_stat <- quantile(100 * sd_r$cmem / sd_r$rmem, probs = qpts, names=FALSE, na.rm = TRUE)
-            df <- rbind(df, data.frame(month = db_month, queue = q, njobs = nrow(sd),
+            df <- rbind(df, data.frame(month = db_month, queue = q,
+                                       njobs = nrow(sd),
+                                       nusers = length(unique(sd$uid)),
+                                       nutotal = total_unique_users,
                                        rwtime_m = rwtime_stat[1],
                                        rwtime_d = rwtime_stat[2],
                                        rwtime_u = rwtime_stat[3],
@@ -151,6 +158,23 @@ date_label_fmt <- "%b"
 if (length( db_files ) > 11 ) {
     date_label_fmt <- "'%y-%m"
 }
+
+# number of unique users per queue
+ggsave(filename = paste(plot_odir, 'nusers_evolution_monthly.png', sep='/'),
+       plot     = ggplot(df, aes(x=month, y=nusers, fill=queue, order=queue)) +
+                         geom_bar(stat='identity', position='stack') +
+                         geom_point(aes(x=month, y=nutotal)) +
+                         ggtitle('Evolution of unique user count') +
+                         xlab('month') +
+                         ylab('count') +
+                         theme_bw() +
+                         theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+                         scale_fill_hue(l=45) +
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")),
+##                         legend_labels + legend_style,
+       width    = 27,
+       height   = 15,
+       units    = 'cm')
 
 # number of jobs per queue
 ggsave(filename = paste(plot_odir, 'njobs_evolution_monthly.png', sep='/'),
@@ -222,7 +246,7 @@ ggsave(filename = paste(plot_odir, 'mem_eff_evolution_monthly.png', sep='/'),
                          theme_bw() +
                          theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
                          scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
-			             scale_y_continuous(breaks=frac_ticks, limits=c(0,100)),
+			             scale_y_continuous(breaks=frac_ticks, limits=c(0,110)),
 ##                         legend_labels + legend_style,
        width    = 27,
        height   = 21,
