@@ -285,7 +285,7 @@ ggsave(filename = paste(plot_odir, 'cmem_evolution_monthly.png', sep='/'),
        units    = 'cm')
 
 # memory utilisation fraction
-ggsave(filename = paste(plot_odir, 'mem_eff_evolution_monthly.png', sep='/'),
+ggsave(filename = paste(plot_odir, 'eff_mem_evolution_monthly.png', sep='/'),
        plot     = ggplot(df, aes(x=month, y=mem_eff_m, group=queue, fill=queue)) +
                          geom_bar(stat='identity') +
                          geom_errorbar(aes(ymax=mem_eff_u, ymin=mem_eff_d)) +

@@ -479,8 +479,14 @@
     }
 
     /* dummy function mimicing animation before and after the loading and visualization */ 
-    function loadDummy(panel) {
+    function loadPlot(panel) {
         panel.find('.loading').show();
+
+        var pid = panel[0].id.split('_');
+        var img_html = '<img src="cgi-bin/get_statistic_plots.py?type=' + pid[0] + '&stat=' + pid[1] + '" style="width:950px;"/>';
+
+        console.log('img_html: ' + img_html);
+        panel[0].innerHTML = img_html;
         setTimeout( function() { panel.find('.loading').hide(); }, 5000 );
     }
 
@@ -500,8 +506,8 @@
 
             case 2: // display accordion for job statistics evolution
                 $( "#evolution_accordion" ).accordion({active  : 0, heightStyle : "fill", collapsible: true,
-                                                        create  : function(event, ui) { loadDummy(ui.panel); },
-                                                        activate: function(event, ui) { loadDummy(ui.newPanel); }});
+                                                        create  : function(event, ui) { loadPlot(ui.panel); },
+                                                        activate: function(event, ui) { loadPlot(ui.newPanel); }});
                 break;
 
             default:
@@ -519,7 +525,7 @@
                 break;
 
             default:
-                loadDummy(panel);
+                loadPlot(panel);
                 break;
         }
     }
@@ -620,7 +626,7 @@
                 <h3><a href="#">Job waiting time</a></h3>
 
                 <div id="stat_qtime">
-                    <img src="cgi-bin/get_statistic_plots.py?stat=qtime" style="width:950px;"/>
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?stat=qtime" style="width:950px;"/> -->
                 </div>
             </li>
 
@@ -646,7 +652,7 @@
                 <h3><a href="#">Memory utilization fraction</a></h3>
 
                 <div id="stat_eff_mem">
-                    <img src="cgi-bin/get_statistic_plots.py?stat=eff_mem" style="width:950px;"/>
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?stat=eff_mem" style="width:950px;"/> -->
                 </div>
             </li>
 
@@ -654,7 +660,7 @@
                 <h3><a href="#">CPU utilization fraction</a></h3>
 
                 <div id="stat_eff_cpu">
-                    <img src="cgi-bin/get_statistic_plots.py?stat=eff_cpu" style="width:950px;"/>
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?stat=eff_cpu" style="width:950px;"/> -->
                 </div>
             </li>
         </ul>
@@ -666,61 +672,61 @@
            <li>
                 <h3><a href="#">Job count</a></h3>
 
-                <div id="evol_njobs">
-                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=njobs" style="width:950px;"/>
+                <div id="evolution_njobs">
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=njobs" style="width:950px;"/> -->
                 </div>
             </li>
             <li>
                 <h3><a href="#">Unique user count (whole system)</a></h3>
 
-                <div id="evol_nusers_all">
-                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=nusers_all" style="width:950px;"/>
+                <div id="evolution_nusers_all">
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=nusers_all" style="width:950px;"/> -->
                 </div>
             </li>
             <li>
                 <h3><a href="#">Unique user count (by queue)</a></h3>
 
-                <div id="evol_nusers_queue">
-                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=nusers_queue" style="width:950px;"/>
+                <div id="evolution_nusers_queue">
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=nusers_queue" style="width:950px;"/> -->
                 </div>
             </li>
             <li>
                 <h3><a href="#">Memory request</a></h3>
 
-                <div id="evol_rmem">
-                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=rmem" style="width:950px;"/>
+                <div id="evolution_rmem">
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=rmem" style="width:950px;"/> -->
                 </div>
             </li>
 
             <li>
                 <h3><a href="#">Memory consumption</a></h3>
 
-                <div id="evol_cmem">
-                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=cmem" style="width:950px;"/>
+                <div id="evolution_cmem">
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=cmem" style="width:950px;"/> -->
                 </div>
             </li>
 
             <li>
                 <h3><a href="#">Memory utilization fraction</a></h3>
 
-                <div id="evol_eff_mem">
-                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=mem_eff" style="width:950px;"/>
+                <div id="evolution_eff_mem">
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=mem_eff" style="width:950px;"/> -->
                 </div>
             </li>
 
            <li>
                 <h3><a href="#">Walltime request</a></h3>
 
-                <div id="evol_rwtime">
-                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=rwtime" style="width:950px;"/>
+                <div id="evolution_rwtime">
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=rwtime" style="width:950px;"/> -->
                 </div>
             </li>
 
             <li>
                 <h3><a href="#">Walltime consumption</a></h3>
 
-                <div id="evol_cwtime">
-                    <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=cwtime" style="width:950px;"/>
+                <div id="evolution_cwtime">
+                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=cwtime" style="width:950px;"/> -->
                 </div>
             </li>
         </ul>
