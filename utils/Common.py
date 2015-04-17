@@ -54,7 +54,8 @@ def getConfig(config_file='config.ini'):
         'TORQUE_LOG_DIR'     : '/home/common/torque/job_logs',
         'TORQUE_BATCH_QUEUES': 'short,medium,long',
         'BIN_QSTAT_ALL'      : 'cluster-qstat',
-        'BIN_FSHARE_ALL'     : 'cluster-fairshare'
+        'BIN_FSHARE_ALL'     : 'cluster-fairshare',
+        'NOTIFICATION_EMAILS': ''
     }
 
     config = ConfigParser.SafeConfigParser(default_cfg)
