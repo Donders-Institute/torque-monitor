@@ -175,9 +175,7 @@ for (f in db_files) {
 }
 dbUnloadDriver(drv)
 
-print(df)
-# output data frame to CSV file
-write.csv(df, file='evolution.csv')
+# print(df)
 
 # plotting monthly evolution
 plot_odir <- paste(db_dpath, 'plots', sep='/')
@@ -195,6 +193,9 @@ date_label_fmt <- "%b"
 if (length( db_files ) > 11 ) {
     date_label_fmt <- "'%y-%m"
 }
+
+# output data frame to CSV file
+write.csv(df, file=paste(plot_odir, 'evolution.csv', sep='/'))
 
 # number of unique users per queue
 ggsave(filename = paste(plot_odir, 'nusers_queue_evolution_monthly.png', sep='/'),
