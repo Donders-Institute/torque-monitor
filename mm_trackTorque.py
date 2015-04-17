@@ -211,9 +211,30 @@ def __sendmail_cnode_down__(cnodes):
     :return:
     """
 
-    if len(cnodes) > 0:
+    # retrieve those nodes already down in previous iteration
+    conn = sqlite3.connect(SQLite_DB_PATH)
+    c = conn.cursor()
+    qry = 'SELECT host FROM rsrc WHERE status = \'down\' AND timestamp in (SELECT max(timestamp) from rsrc)'
+
+    cnodes_prev = []
+    try:
+        for r in c.execute(qry):
+             cnodes_prev.append(r['host'])
+    except sqlite3.OperationalError,e:
+         logger.warning('SQL error: %s' % repr(e))
+
+    try:
+        if conn:
+            conn.close()
+    except:
+        pass
+
+    # filter out nodes that are already down in previous iteration
+    cnodes_notify = list(set(cnodes) - set(cnodes_prev))
+
+    if len(cnodes_notify) > 0:
         subject = '[Torquemon] compute nodes are down!!'
-        msg = '\n'.join(map(lambda x: x.host, cnodes))
+        msg = '\n'.join(map(lambda x: x.host, cnodes_notify))
         sendEmailNotification('admin@dccn-l018.dccn.nl', NOTIFICATION_EMAILS, subject, msg)
 
 def __sqlite_summeas__( summeas ):
