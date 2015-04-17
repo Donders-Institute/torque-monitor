@@ -1,6 +1,7 @@
 #/usr/bin/env python
+from email.mime.text import MIMEText
+from subprocess import Popen, PIPE
 
-import os 
 import logging
 import inspect
 import time
@@ -156,6 +157,23 @@ def fmtStructTimeUTC(stime):
     Format given struct time in to human readable string
     ''' 
     return time.strftime('%a %b %d %H:%M:%S %Y',stime)
+
+def sendEmailNotification(from_email, to_emails, subject, msg):
+    """
+    sends email notification via sendmail daemon on local machine.
+    :param from_email: the FROM email address
+    :param to_emails: a list of email addresses to send the message
+    :param subject: subject of the message
+    :param msg: the message body in plain text
+    :return: (stdoutdata, stderrdata) of the sendmail command
+    """
+
+    msg = MIMEText("Here is the body of my message")
+    msg["From"] = from_email
+    msg["To"] = ",".join(to_emails)
+    msg["Subject"] = subject
+    p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE)
+    return p.communicate(msg.as_string())
 
 #def getMySQLConnector(uid,passwd,db):
 #

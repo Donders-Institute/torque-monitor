@@ -200,6 +200,21 @@ def report_node_status(hnodes, cnodes):
         __sqlite_cnode_status__(cnodes)
         __sqlite_hnode_status__(hnodes)
 
+        # sending notification emails
+        if args.sendmail:
+            __sendmail_cnode_down__(filter(lambda x: x.stat == 'down', cnodes))
+
+def __sendmail_cnode_down__(cnodes):
+    """
+    sends notification emails concerning the nodes are in status 'down'
+    :param cnodes: the nodes that are down
+    :return:
+    """
+    subject = '[Torquemon] compute nodes are down!!'
+    msg = '\n'.join( map(lambda x: x.host, cnodes))
+
+    sendEmailNotification('admin@dccn-l018.dccn.nl', NOTIFICATION_EMAILS, subject, msg)
+
 def __sqlite_summeas__( summeas ):
     '''report statistical measurement into SQLite database'''
     conn    = sqlite3.connect(SQLite_DB_PATH)
@@ -395,6 +410,12 @@ if __name__ == "__main__":
                       default = True,
                       help    = 'disable table coloring')
 
+    parg.add_argument('-s', '--sendmail',
+                      action  = 'store_true',
+                      dest    = 'sendmail',
+                      default = True,
+                      help    = 'enable sending notification emails at certain circumstances')
+
     global args 
 #    global TORQUE_LOG_DIR
     global BIN_QSTAT_ALL
@@ -404,7 +425,8 @@ if __name__ == "__main__":
     global logger
     global now
     global SQLite_DB_PATH
-    global TORQUE_BATCH_QUEUES 
+    global TORQUE_BATCH_QUEUES
+    global NOTIFICATION_EMAILS
 
     args = parg.parse_args()
 
@@ -415,6 +437,7 @@ if __name__ == "__main__":
     BIN_FSHARE_ALL      = c.get('TorqueTracker','BIN_FSHARE_ALL')
     DB_DATA_DIR         = c.get('TorqueTracker','DB_DATA_DIR')
     TORQUE_BATCH_QUEUES = c.get('TorqueTracker','TORQUE_BATCH_QUEUES').split(',')
+    NOTIFICATION_EMAILS = c.get('TorqueTracker','NOTIFICATION_EMAILS').split(',')
 
     SQLite_DB_PATH   = os.path.join( DB_DATA_DIR, '%s_%d.db' % (os.path.basename(__file__).replace('.py',''), datetime.datetime.now().year) )
 
