@@ -214,7 +214,7 @@ def __sendmail_cnode_down__(cnodes):
     # retrieve those nodes already down in previous iteration
     conn = sqlite3.connect(SQLite_DB_PATH)
     c = conn.cursor()
-    qry = 'SELECT host FROM rsrc WHERE status = \'down\' AND timestamp in (SELECT max(timestamp) from rsrc)'
+    qry = 'SELECT host FROM rsrc WHERE stat = \'down\' AND timestamp in (SELECT max(timestamp) from rsrc)'
 
     cnodes_prev = []
     try:
