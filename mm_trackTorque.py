@@ -413,7 +413,7 @@ if __name__ == "__main__":
     parg.add_argument('-s', '--sendmail',
                       action  = 'store_true',
                       dest    = 'sendmail',
-                      default = True,
+                      default = False,
                       help    = 'enable sending notification emails at certain circumstances')
 
     global args 
