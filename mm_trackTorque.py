@@ -210,10 +210,11 @@ def __sendmail_cnode_down__(cnodes):
     :param cnodes: the nodes that are down
     :return:
     """
-    subject = '[Torquemon] compute nodes are down!!'
-    msg = '\n'.join( map(lambda x: x.host, cnodes))
 
-    sendEmailNotification('admin@dccn-l018.dccn.nl', NOTIFICATION_EMAILS, subject, msg)
+    if len(cnodes) > 0:
+        subject = '[Torquemon] compute nodes are down!!'
+        msg = '\n'.join(map(lambda x: x.host, cnodes))
+        sendEmailNotification('admin@dccn-l018.dccn.nl', NOTIFICATION_EMAILS, subject, msg)
 
 def __sqlite_summeas__( summeas ):
     '''report statistical measurement into SQLite database'''

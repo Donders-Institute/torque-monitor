@@ -169,12 +169,12 @@ def sendEmailNotification(from_email, to_emails, subject, msg):
     :return: (stdoutdata, stderrdata) of the sendmail command
     """
 
-    msg = MIMEText("Here is the body of my message")
-    msg["From"] = from_email
-    msg["To"] = ",".join(to_emails)
-    msg["Subject"] = subject
+    c = MIMEText(msg)
+    c["From"] = from_email
+    c["To"] = ",".join(to_emails)
+    c["Subject"] = subject
     p = Popen(["/usr/sbin/sendmail", "-t", "-oi"], stdin=PIPE)
-    return p.communicate(msg.as_string())
+    return p.communicate(c.as_string())
 
 #def getMySQLConnector(uid,passwd,db):
 #
