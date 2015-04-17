@@ -235,7 +235,7 @@ def __sendmail_cnode_down__(cnodes):
     cnodes_notify = list(set(cnodes) - set(cnodes_prev))
 
     if len(cnodes_notify) > 0:
-        subject = '[Torquemon] compute nodes are down!!'
+        subject = '[Torquemon] compute nodes DOWN!!'
         msg = '\n'.join(cnodes_notify)
         sendEmailNotification('admin@dccn-l018.dccn.nl', NOTIFICATION_EMAILS, subject, msg)
 
