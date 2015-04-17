@@ -197,12 +197,14 @@ def report_node_status(hnodes, cnodes):
         __tab_hnode_status__(hnodes)
 
     if args.monitor:
-        __sqlite_cnode_status__(cnodes)
-        __sqlite_hnode_status__(hnodes)
 
         # sending notification emails
         if args.sendmail:
-            __sendmail_cnode_down__(filter(lambda x: x.stat == 'down', cnodes))
+            __sendmail_cnode_down__(map(lambda x: x.host, filter(lambda x: x.stat == 'down', cnodes)))
+
+        __sqlite_cnode_status__(cnodes)
+        __sqlite_hnode_status__(hnodes)
+
 
 def __sendmail_cnode_down__(cnodes):
     """
@@ -219,7 +221,7 @@ def __sendmail_cnode_down__(cnodes):
     cnodes_prev = []
     try:
         for r in c.execute(qry):
-             cnodes_prev.append(r['host'])
+             cnodes_prev.append(r[0])
     except sqlite3.OperationalError,e:
          logger.warning('SQL error: %s' % repr(e))
 
@@ -234,7 +236,7 @@ def __sendmail_cnode_down__(cnodes):
 
     if len(cnodes_notify) > 0:
         subject = '[Torquemon] compute nodes are down!!'
-        msg = '\n'.join(map(lambda x: x.host, cnodes_notify))
+        msg = '\n'.join(cnodes_notify)
         sendEmailNotification('admin@dccn-l018.dccn.nl', NOTIFICATION_EMAILS, subject, msg)
 
 def __sqlite_summeas__( summeas ):
