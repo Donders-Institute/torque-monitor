@@ -220,7 +220,7 @@ ggsave(filename = paste(plot_odir, paste('rmem_queue_scatter', o_suffix, '.png',
                          facet_wrap(~ cstat, ncol=1) +
                          ggtitle(paste('Job Memory Request', t_suffix, sep=' ')) +
                          xlab('queue') +
-                         ylab('gigabytes') +
+                         ylab('GB') +
                          theme_bw() +
                          theme(legend.position="none") +
                          scale_fill_hue(l=45) +
@@ -238,7 +238,7 @@ ggsave(filename = paste(plot_odir, paste('cmem_queue_scatter', o_suffix, '.png',
                          facet_wrap(~ cstat, ncol=1) +
                          ggtitle(paste('Job Memory Consumption',t_suffix,sep=' ')) +
                          xlab('queue') +
-                         ylab('gigabytes') +
+                         ylab('GB') +
                          theme_bw() +
                          theme(legend.position="none") +
                          scale_fill_hue(l=45) +
@@ -262,6 +262,92 @@ ggsave(filename = paste(plot_odir,paste('eff_mem_queue_scatter', o_suffix, '.png
                          scale_fill_hue(l=45) +
                          scale_y_continuous(breaks=frac_ticks, limits=c(0,100)),
                          #legend_labels + legend_style,
+       width    = 27,
+       height   = 21,
+       units    = 'cm')
+
+## correlation plots
+## requested walltime vs. requested memory
+ggsave(filename = paste(plot_odir,paste('rwtime_rmem_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
+       plot     = ggplot(job_data, aes(x=rwtime/3600., y=rmem)) +
+                         geom_point(aes(color=cstat), alpha=0.5, size=1) +
+                         facet_wrap(~ queue, ncol=3) +
+                         ggtitle(paste('requested walltime vs. requested memory',t_suffix,sep=' ')) +
+                         xlab('hours') +
+                         ylab('GB') +
+                         theme_bw() +
+                         legend_labels + legend_style +
+                         scale_fill_hue(l=45) +
+                         scale_y_sqrt(breaks=GB_ticks) +
+                         scale_x_sqrt(breaks=hr_ticks_3d),
+       width    = 27,
+       height   = 21,
+       units    = 'cm')
+
+## requested walltime vs. consumed memory
+ggsave(filename = paste(plot_odir,paste('rwtime_cmem_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
+       plot     = ggplot(job_data, aes(x=rwtime/3600., y=cmem)) +
+                         geom_point(aes(color=cstat), alpha=0.5, size=1) +
+                         facet_wrap(~ queue, ncol=3) +
+                         ggtitle(paste('requested walltime vs. consumed memory',t_suffix,sep=' ')) +
+                         xlab('hours') +
+                         ylab('GB') +
+                         theme_bw() +
+                         legend_labels + legend_style +
+                         scale_fill_hue(l=45) +
+                         scale_y_sqrt(breaks=GB_ticks) +
+                         scale_x_sqrt(breaks=hr_ticks_3d),
+       width    = 27,
+       height   = 21,
+       units    = 'cm')
+
+## consumed walltime vs. requested memory
+ggsave(filename = paste(plot_odir,paste('cwtime_rmem_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
+       plot     = ggplot(job_data, aes(x=cwtime/3600., y=rmem)) +
+                         geom_point(aes(color=cstat), alpha=0.5, size=1) +
+                         facet_wrap(~ queue, ncol=3) +
+                         ggtitle(paste('consumed walltime vs. requested memory',t_suffix,sep=' ')) +
+                         xlab('hours') +
+                         ylab('GB') +
+                         theme_bw() +
+                         legend_labels + legend_style +
+                         scale_fill_hue(l=45) +
+                         scale_y_sqrt(breaks=GB_ticks) +
+                         scale_x_sqrt(breaks=hr_ticks_3d),
+       width    = 27,
+       height   = 21,
+       units    = 'cm')
+
+## consumed walltime vs. consumed memory
+ggsave(filename = paste(plot_odir,paste('cwtime_cmem_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
+       plot     = ggplot(job_data, aes(x=cwtime/3600., y=cmem)) +
+                         geom_point(aes(color=cstat), alpha=0.5, size=1) +
+                         facet_wrap(~ queue, ncol=3) +
+                         ggtitle(paste('consumed walltime vs. consumed memory',t_suffix,sep=' ')) +
+                         xlab('hours') +
+                         ylab('GB') +
+                         theme_bw() +
+                         legend_labels + legend_style +
+                         scale_fill_hue(l=45) +
+                         scale_y_sqrt(breaks=GB_ticks) +
+                         scale_x_sqrt(breaks=hr_ticks_3d),
+       width    = 27,
+       height   = 21,
+       units    = 'cm')
+
+## CPU utilisation vs. memory utilisation
+ggsave(filename = paste(plot_odir,paste('effcpu_effmem_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
+       plot     = ggplot(job_data, aes(x=100.*cctime/cwtime, y=100.*cmem/rmem)) +
+                         geom_point(aes(color=cstat), alpha=0.5, size=1) +
+                         facet_wrap(~ queue, ncol=3) +
+                         ggtitle(paste('CPU utilisation vs. memory utilisation',t_suffix,sep=' ')) +
+                         xlab('cpu utilisation %') +
+                         ylab('memory utilisation %') +
+                         theme_bw() +
+                         legend_labels + legend_style +
+                         scale_fill_hue(l=45) +
+                         scale_y_continuous(breaks=frac_ticks, limits=c(0,100)) +
+                         scale_x_continuous(breaks=frac_ticks, limits=c(0,100)),
        width    = 27,
        height   = 21,
        units    = 'cm')

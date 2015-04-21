@@ -76,6 +76,7 @@ qname_everything = 'all'
 # each db file contains jobs submitted within the month
 for (f in db_files) {
     db_month   <- as.Date(paste(sub('.db','',sub('mm_trackTorqueJobs_','',f)),"01"),"%Y%m%d")
+
     #db_month   <- sub('.db','',sub('mm_trackTorqueJobs_','',f))
     db_fpath   <- paste(db_dpath,f,sep='/')
     print( paste('Quering database',db_fpath,sep=' '))
@@ -207,7 +208,7 @@ ggsave(filename = paste(plot_odir, 'nusers_queue_evolution_monthly.png', sep='/'
                          theme_bw() +
                          theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
                          scale_fill_hue(l=45) +
-                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")),
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("3 months")),
 ##                         legend_labels + legend_style,
        width    = 27,
        height   = 15,
@@ -223,7 +224,7 @@ ggsave(filename = paste(plot_odir, 'nusers_all_evolution_monthly.png', sep='/'),
                          theme_bw() +
                          theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
                          scale_fill_hue(l=45) +
-                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")),
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("3 months")),
 ##                         legend_labels + legend_style,
        width    = 27,
        height   = 15,
@@ -239,7 +240,7 @@ ggsave(filename = paste(plot_odir, 'njobs_evolution_monthly.png', sep='/'),
                          theme_bw() +
                          theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
                          scale_fill_hue(l=45) +
-                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")),
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("3 months")),
 ##                         legend_labels + legend_style,
        width    = 27,
        height   = 15,
@@ -258,8 +259,8 @@ ggsave(filename = paste(plot_odir, 'rmem_evolution_monthly.png', sep='/'),
                          ylab('GB') +
                          theme_bw() +
                          theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
-                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
-			             scale_y_continuous(breaks=GB_ticks),
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("3 months")) +
+			             scale_y_sqrt(breaks=GB_ticks),
 ##                         legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -278,8 +279,8 @@ ggsave(filename = paste(plot_odir, 'cmem_evolution_monthly.png', sep='/'),
                          ylab('GB') +
                          theme_bw() +
                          theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
-                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
-			             scale_y_continuous(breaks=GB_ticks),
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("3 months")) +
+			             scale_y_sqrt(breaks=GB_ticks),
 ##                         legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -298,7 +299,7 @@ ggsave(filename = paste(plot_odir, 'eff_mem_evolution_monthly.png', sep='/'),
                          ylab('%') +
                          theme_bw() +
                          theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
-                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("3 months")) +
 			             scale_y_continuous(breaks=frac_ticks, limits=c(0,110)),
 ##                         legend_labels + legend_style,
        width    = 27,
@@ -318,8 +319,8 @@ ggsave(filename = paste(plot_odir, 'rwtime_evolution_monthly.png', sep='/'),
                          ylab('hour') +
                          theme_bw() +
                          theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
-                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
-			             scale_y_continuous(breaks=hr_ticks_3d),
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("3 months")) +
+			             scale_y_sqrt(breaks=hr_ticks_3d),
 ##                         legend_labels + legend_style,
        width    = 27,
        height   = 21,
@@ -338,8 +339,8 @@ ggsave(filename = paste(plot_odir, 'cwtime_evolution_monthly.png', sep='/'),
                          ylab('hour') +
                          theme_bw() +
                          theme(legend.position="none", axis.text.x = element_text(angle = 45, hjust = 1)) +
-                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("month")) +
-			             scale_y_continuous(breaks=hr_ticks_3d),
+                         scale_x_date(labels = date_format(date_label_fmt), breaks = date_breaks("3 months")) +
+			             scale_y_sqrt(breaks=hr_ticks_3d),
 ##                         legend_labels + legend_style,
        width    = 27,
        height   = 21,
