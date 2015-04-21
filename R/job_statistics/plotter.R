@@ -341,8 +341,8 @@ ggsave(filename = paste(plot_odir,paste('rwtime_qtime_queue_scatter', o_suffix, 
                          geom_point(aes(color=cstat), alpha=0.5, size=1) +
                          facet_wrap(~ queue, ncol=3) +
                          ggtitle(paste('requested walltime vs. job waiting time',t_suffix,sep=' ')) +
-                         xlab('hours') +
-                         ylab('hours') +
+                         xlab('requested walltime (hours)') +
+                         ylab('job waiting time (hours)') +
                          theme_bw() +
                          legend_labels + legend_style +
                          scale_fill_hue(l=45) +
@@ -358,8 +358,8 @@ ggsave(filename = paste(plot_odir,paste('rmem_qtime_queue_scatter', o_suffix, '.
                          geom_point(aes(color=cstat), alpha=0.5, size=1) +
                          facet_wrap(~ queue, ncol=3) +
                          ggtitle(paste('requested memory vs. job waiting time',t_suffix,sep=' ')) +
-                         xlab('GB') +
-                         ylab('hours') +
+                         xlab('request memory (GB)') +
+                         ylab('job waiting time (hours)') +
                          theme_bw() +
                          legend_labels + legend_style +
                          scale_fill_hue(l=45) +
