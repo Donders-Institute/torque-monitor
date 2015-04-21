@@ -335,6 +335,40 @@ ggsave(filename = paste(plot_odir,paste('cwtime_cmem_queue_scatter', o_suffix, '
        height   = 21,
        units    = 'cm')
 
+## requested walltime vs. job waiting time
+ggsave(filename = paste(plot_odir,paste('rwtime_qtime_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
+       plot     = ggplot(job_data, aes(x=rwtime/3600., y=1.0*(t_start-t_queue)/3600)) +
+                         geom_point(aes(color=cstat), alpha=0.5, size=1) +
+                         facet_wrap(~ queue, ncol=3) +
+                         ggtitle(paste('requested walltime vs. job waiting time',t_suffix,sep=' ')) +
+                         xlab('hours') +
+                         ylab('hours') +
+                         theme_bw() +
+                         legend_labels + legend_style +
+                         scale_fill_hue(l=45) +
+                         scale_x_sqrt(breaks=hr_ticks_3d) +
+                         scale_y_sqrt(breaks=hr_ticks_3d),
+       width    = 27,
+       height   = 21,
+       units    = 'cm')
+
+## requested memory vs. job waiting time
+ggsave(filename = paste(plot_odir,paste('rmem_qtime_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
+       plot     = ggplot(job_data, aes(x=rmem, y=1.0*(t_start-t_queue)/3600)) +
+                         geom_point(aes(color=cstat), alpha=0.5, size=1) +
+                         facet_wrap(~ queue, ncol=3) +
+                         ggtitle(paste('requested memory vs. job waiting time',t_suffix,sep=' ')) +
+                         xlab('GB') +
+                         ylab('hours') +
+                         theme_bw() +
+                         legend_labels + legend_style +
+                         scale_fill_hue(l=45) +
+                         scale_x_sqrt(breaks=GB_ticks) +
+                         scale_y_sqrt(breaks=hr_ticks_3d),
+       width    = 27,
+       height   = 21,
+       units    = 'cm')
+
 ## CPU utilisation vs. memory utilisation
 ggsave(filename = paste(plot_odir,paste('effcpu_effmem_queue_scatter', o_suffix, '.png',sep=''),sep='/'),
        plot     = ggplot(job_data, aes(x=100.*cctime/cwtime, y=100.*cmem/rmem)) +
