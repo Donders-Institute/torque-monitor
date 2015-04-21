@@ -560,7 +560,6 @@
 </head>
 <body>
 <div id="tabs">
-
     <!-- define the tabs -->
     <ul>
         <li><a href="#accounting_dashboard">Accounting</a></li>
@@ -624,43 +623,45 @@
             <li>
                 <h3><a href="#">Job waiting time</a></h3>
 
-                <div id="stat_qtime">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?stat=qtime" style="width:950px;"/> -->
-                </div>
+                <div id="stat_qtime"></div>
             </li>
-
             <!--
             <li>
                 <h3><a href="#">Memory request</a></h3>
-
-                <div id="stat_rmem">
-                    <img src="cgi-bin/get_statistic_plots.py?stat=rmem" style="width:950px;"/>
-                </div>
+                <div id="stat_rmem"></div>
             </li>
-
             <li>
                 <h3><a href="#">Memory consumption</a></h3>
-
-                <div id="stat_cmem">
-                    <img src="cgi-bin/get_statistic_plots.py?stat=cmem" style="width:950px;"/>
-                </div>
+                <div id="stat_cmem"></div>
             </li>
             -->
-
             <li>
                 <h3><a href="#">Memory utilization fraction</a></h3>
-
-                <div id="stat_eff_mem">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?stat=eff_mem" style="width:950px;"/> -->
-                </div>
+                <div id="stat_eff_mem"></div>
             </li>
-
             <li>
                 <h3><a href="#">CPU utilization fraction</a></h3>
-
-                <div id="stat_eff_cpu">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?stat=eff_cpu" style="width:950px;"/> -->
-                </div>
+                <div id="stat_eff_cpu"></div>
+            </li>
+            <li>
+                <h3><a href="#">Requested walltime vs. requested memory</a></h3>
+                <div id="stat_rwtime_rmem"></div>
+            </li>
+            <li>
+                <h3><a href="#">Requested walltime vs. consumed memory</a></h3>
+                <div id="stat_rwtime_cmem"></div>
+            </li>
+            <li>
+                <h3><a href="#">Consumed walltime vs. requested memory</a></h3>
+                <div id="stat_cwtime_rmem"></div>
+            </li>
+            <li>
+                <h3><a href="#">Consumed walltime vs. consumed memory</a></h3>
+                <div id="stat_cwtime_cmem"></div>
+            </li>
+            <li>
+                <h3><a href="#">CPU utilisation vs. memory utilisation</a></h3>
+                <div id="stat_effcpu_effmem"></div>
             </li>
         </ul>
     </div>
@@ -670,67 +671,38 @@
         <ul id="evolution_accordion">
            <li>
                 <h3><a href="#">Job count</a></h3>
-
-                <div id="evolution_njobs">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=njobs" style="width:950px;"/> -->
-                </div>
+                <div id="evolution_njobs"></div>
             </li>
             <li>
                 <h3><a href="#">Unique user count (whole system)</a></h3>
-
-                <div id="evolution_nusers_all">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=nusers_all" style="width:950px;"/> -->
-                </div>
+                <div id="evolution_nusers_all"></div>
             </li>
             <li>
                 <h3><a href="#">Unique user count (by queue)</a></h3>
-
-                <div id="evolution_nusers_queue">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=nusers_queue" style="width:950px;"/> -->
-                </div>
+                <div id="evolution_nusers_queue"></div>
             </li>
             <li>
                 <h3><a href="#">Memory request</a></h3>
-
-                <div id="evolution_rmem">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=rmem" style="width:950px;"/> -->
-                </div>
+                <div id="evolution_rmem"></div>
             </li>
-
             <li>
                 <h3><a href="#">Memory consumption</a></h3>
-
-                <div id="evolution_cmem">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=cmem" style="width:950px;"/> -->
-                </div>
+                <div id="evolution_cmem"></div>
             </li>
-
             <li>
                 <h3><a href="#">Memory utilization fraction</a></h3>
-
-                <div id="evolution_eff_mem">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=mem_eff" style="width:950px;"/> -->
-                </div>
+                <div id="evolution_eff_mem"></div>
             </li>
-
            <li>
                 <h3><a href="#">Walltime request</a></h3>
-
-                <div id="evolution_rwtime">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=rwtime" style="width:950px;"/> -->
-                </div>
+                <div id="evolution_rwtime"></div>
             </li>
-
             <li>
                 <h3><a href="#">Walltime consumption</a></h3>
-
-                <div id="evolution_cwtime">
-                    <!-- <img src="cgi-bin/get_statistic_plots.py?type=evolution&stat=cwtime" style="width:950px;"/> -->
-                </div>
+                <div id="evolution_cwtime"></div>
             </li>
         </ul>
     </div>
-
 </div>
 </body>
 </html>
