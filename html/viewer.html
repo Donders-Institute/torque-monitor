@@ -281,8 +281,8 @@
                 break;
             } else {
 
-                // split obj[i].top_ps by '|' and add element as individual table
-                top_ps_list = obj[i].top_ps.split("|");
+                // split obj[i].top_ps by '+|+' and add element as individual table
+                top_ps_list = obj[i].top_ps.split("+|+");
 
                 top_ps_html  = "<table class=\"ps\">";
                 top_ps_html += "<tr class=\"ps_header\">";
@@ -616,7 +616,7 @@
         panel.find('.loading').show();
 
         // load cluster utilization history 
-        var jqx = $.getJSON( "cgi-bin/get_trackTorque_data.py?type=stat&period=7", function( data ) {
+        var jqx = $.getJSON( "cgi-bin/get_trackTorque_data.py?type=stat&period=30", function( data ) {
             visual_cluster_utilization_history(panel, $.parseJSON( data ) );
         });
     }
