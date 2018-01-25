@@ -89,7 +89,8 @@ def get_complete_jobs(logdir, date, debug=False):
         # open xml file and do some fixing
         temp = open(myfile, 'r').read()
         # fix incorrect closing tag
-        temp = temp.replace('JobId', 'Job_Id')
+        #temp = temp.replace('JobId', 'Job_Id')
+        temp = re.sub(r'<Variable_List>.*</Variable_List>', '', temp.replace('JobId', 'Job_Id'))
         # fix the fact that there is no overarching beginning and end tag.
         temp = '<data>\n' + temp + '\n</data>'
  
