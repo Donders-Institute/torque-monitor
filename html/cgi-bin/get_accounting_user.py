@@ -138,7 +138,7 @@ if __name__ == "__main__":
   
     t_delta  = 7
     try:
-        t_delta = float(params['period'])
+        t_delta = int(params['period'])
     except KeyError, e:
         pass 
 
