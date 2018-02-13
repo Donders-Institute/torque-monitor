@@ -74,7 +74,7 @@ def __sqlite_hnode_status__(nodes):
         # it does not make sense if host's ncore is 0.
         # TODO: maybe mark the host with ncore=0 as 'down' 
         if n.ncores > 0:
-            data.append( (int(time.mktime(now.timetuple())), n.host, n.ncores, n.mem, n.nxvnc, n.load_1m, n.load_5m, n.load_10m, n.total_ps, '|'.join(n.top_ps)) )
+            data.append( (int(time.mktime(now.timetuple())), n.host, n.ncores, n.mem, n.nxvnc, n.load_1m, n.load_5m, n.load_10m, n.total_ps, unicode('+|+'.join(n.top_ps), errors='ignore')) )
 
     logger.debug(data)
 
