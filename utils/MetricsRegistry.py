@@ -42,11 +42,27 @@ class ClusterMetrics:
 
         jobs = get_qstat_jobs(s_cmd=self.BIN_QSTAT_ALL)
         nodes = get_cluster_node_properties()
-        
+
+        # TODO: make it configurable
+        q_cat = ['matlab','batch','vgl','interact','other']
+
+        def _qcat(queue):
+            cat = queue
+            if cat in self.TORQUE_BATCH_QUEUES:
+                cat = 'batch'
+            elif q not in q_cat:
+                cat = 'other'
+            return cat 
+ 
         # static node information
         for n in nodes:
-            g_core_total.labels(host=n.host).set( n.cores )
-            g_core_total.labels(host=n.host).set( n.mem * 1024 * 1024 * 1024 )
+            g_core_total.labels(host=n.host).set( n.ncores )
+            g_mem_total.labels(host=n.host).set( n.mem * 1000000000 )
+
+            # set default usage metrics to zero
+            for q in q_cat:
+                g_core_usage.labels(queue=q, host=n.host).set( 0 )
+                g_mem_usage.labels(queue=q , host=n.host).set( 0 )
 
         #   the job state (according to qstat manual):
         #     C  - Job is completed after having run
@@ -59,25 +75,32 @@ class ClusterMetrics:
         #     S  - (Unicos only) job is suspended.        
         
         ## get jobs in queue or waiting state
-        q_jobs = filter( lambda j:j.jstate in ['Q', 'S'], jobs )
-        h_jobs = filter( lambda j:j.jstate in ['H'], jobs )
-        
+        _jobs = []
+        map(_jobs.extend, jobs.values())
+
+        q_jobs = filter(lambda j:j.jstat in ['Q','S'], _jobs)
+        h_jobs = filter(lambda j:j.jstat in ['H'], _jobs)
+
+        # set default job count metrics to zero
+        for q in q_cat:
+            for s in ['queued','held','running']:
+                g_job_count.labels(queue=q, status=s).set(0)
+             
         for j in q_jobs:
-            g_job_count.labels(queue=j.queue, status='queued').inc(1)
+            g_job_count.labels(queue=_qcat(j.queue), status='queued').inc(1)
             
         for j in h_jobs:
-            g_job_count.labels(queue=j.queue, status='held').inc(1)
+            g_job_count.labels(queue=_qcat(j.queue), status='held').inc(1)
 
         ## get jobs in running state
-        r_jobs = filter( lambda j:j.jstate in ['E','R'], jobs )
-        
+        r_jobs = filter(lambda j:j.jstat in ['E','R'], _jobs)
         for j in r_jobs:
-            g_job_count.labels(queue=j.queue, status='running').inc(1)
+            g_job_count.labels(queue=_qcat(j.queue), status='running').inc(1)
             
-            # set core usage
+            # update core and memory usage
             for n in j.node:
-                g_core_usage.labels(queue=j.queue, host=n).inc(1)
-                g_mem_usage.labels(queue=j.queue, host=n).inc(rmem * 1024 * 1024 * 1024)
+                g_core_usage.labels(queue=_qcat(j.queue), host=n).inc(1)
+                g_mem_usage.labels(queue=_qcat(j.queue), host=n).inc(j.rmem * 1000000000)
                 
         return
         
