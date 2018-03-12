@@ -120,10 +120,10 @@ class MetricsRegistry:
         push_to_gateway(endpoint, job=job, instance=instance, registry=self.registry)
         return 
         
-def testMetricsRegistry():
+def testMetricsRegistry(config):
     """Test function for MetricsRegistry"""
     r = MetricsRegistry.getInstance()
-    r.registry.register(CollectorCluster)
+    r.registry.register(CollectorCluster(config))
     
     # write out metrics to file
     r.exportToFile('test.prom')
