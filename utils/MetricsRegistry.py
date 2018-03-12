@@ -7,7 +7,7 @@ from prometheus_client.exposition import basic_auth_handler
 from utils.Cluster import *
 from utils.Common  import *
 
-class CollectorCluster:
+class ClusterMetrics:
     """metrics collector for cluster statistics"""
     def __init__(self, config):
         ## load config file and global settings
@@ -15,19 +15,30 @@ class CollectorCluster:
         self.BIN_QSTAT_ALL       = c.get('TorqueTracker','BIN_QSTAT_ALL')
         self.BIN_FSHARE_ALL      = c.get('TorqueTracker','BIN_FSHARE_ALL')
         self.TORQUE_BATCH_QUEUES = c.get('TorqueTracker','TORQUE_BATCH_QUEUES').split(',')
+        self.registry = CollectorRegistry()
     
-    def collect(self):
+    def exportToFile(self, fpath):
+        """export metrics in the registry to a file"""
+        write_to_textfile(fpath, self.registry)
+        return
+
+    def pushToGateway(self, endpoint, job, instance):
+        """push metrics in the registry to the prometheus gateway"""
+        push_to_gateway(endpoint, job=job, instance=instance, registry=self.registry)
+        return
+    
+    def collectMetrics(self):
         
         # metrics for core utilisation
-        g_core_usage = GaugeMetricFamily('hpc_core_usage', 'number of used cores per node per queue', labels=['host', 'queue'])
-        g_core_total = GaugeMetricFamily('hpc_core_total', 'number of total cores per node', labels=['host'])
+        g_core_usage = Gauge('hpc_core_usage', 'number of used cores per node per queue', ['host', 'queue'], registry=self.registry)
+        g_core_total = Gauge('hpc_core_total', 'number of total cores per node', ['host'], registry=self.registry)
         
         # metrics for memory utilisation
-        g_mem_usage  = GaugeMetricFamily('hpc_mem_usage' , 'bytes of used memory per node per queue', labels=['host', 'queue'])
-        g_mem_total  = GaugeMetricFamily('hpc_mem_total' , 'bytes of total memory per node', labels=['host'])
+        g_mem_usage  = Gauge('hpc_mem_usage' , 'bytes of used memory per node per queue', ['host', 'queue'], registry=self.registry)
+        g_mem_total  = Gauge('hpc_mem_total' , 'bytes of total memory per node', ['host'], registry=self.registry)
         
         # metrics for job count per queue, per state
-        g_job_count  = GaugeMetricFamily('hpc_job_count' , 'number of jobs' , labels=['queue','status'])
+        g_job_count  = Gauge('hpc_job_count' , 'number of jobs' , ['queue','status'], registry=self.registry)
 
         jobs = get_qstat_jobs(s_cmd=self.BIN_QSTAT_ALL)
         nodes = get_cluster_node_properties()
@@ -67,63 +78,13 @@ class CollectorCluster:
             for n in j.node:
                 g_core_usage.labels(queue=j.queue, host=n).inc(1)
                 g_mem_usage.labels(queue=j.queue, host=n).inc(rmem * 1024 * 1024 * 1024)
-        
-        # yield metrics
-        yield g_core_total
-        yield g_core_usage
-        yield g_mem_total
-        yield g_mem_usage
-        yield g_job_count
-
-class MetricsRegistry:
-    '''data object containing metrics information'''
-    __instance = None
-
-    @staticmethod
-    def getInstance():
-        """ Static access method. """
-        if MetricsRegistry.__instance == None:
-            MetricsRegistry()
-        return MetricsRegistry.__instance
-
-    def __init__(self):
-        if MetricsRegistry.__instance != None:
-            raise Exception("This class is a singleton!")
-        else:
-            self.registry = CollectorRegistry()
-            MetricsRegistry.__instance = self
-
-    def registerMetrics(self, type, name, labels=[], desc=None):
-        """register a new metric"""
-        if not desc:
-            desc = 'metric of %s' % name
-        m = None
-        if type == 'gauge':
-            m = Gauge(name, desc, labels, registry=self.registry)
-        elif type == 'counter':
-            m = Counter(name, desc, labels, registry=self.registry)
-        elif type == 'summary':
-            m = Summary(name, desc, labels, registry=self.registry)
-        elif type == 'histogram':
-            m = Histogram(name, desc, labels, registry=self.registry)
-        else:
-            raise ValueError('unsupported metrics type %s' % type)
-        return m
-
-    def exportToFile(self, fpath):
-        """export metrics in the registry to a file"""
-        write_to_textfile(fpath, self.registry)
+                
         return
-
-    def pushToGateway(self, endpoint, job, instance):
-        """push metrics in the registry to the prometheus gateway"""
-        push_to_gateway(endpoint, job=job, instance=instance, registry=self.registry)
-        return 
         
-def testMetricsRegistry(config):
+def testClusterMetrics(config):
     """Test function for MetricsRegistry"""
-    r = MetricsRegistry.getInstance()
-    r.registry.register(CollectorCluster(config))
-    
+    m = ClusterMetrics(config)
+    # collection metrics
+    m.collectMetrics()
     # write out metrics to file
-    r.exportToFile('test.prom')
+    m.exportToFile('test.prom')
