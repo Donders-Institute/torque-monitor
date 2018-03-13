@@ -6,6 +6,7 @@ from prometheus_client.exposition import basic_auth_handler
 
 import potsdb
 import datetime
+import logging
 
 from utils.Cluster import *
 from utils.Common  import *
@@ -30,9 +31,10 @@ class MetricData:
 
 class ClusterAccounting:
     """metrics collector for cluster utilisation accounting"""
-    def __init__(self, config):
+    def __init__(self, config, lv=logging.ERROR):
         
         self.logger = getMyLogger(self.__class__.__name__)
+        self.logger.setLevel(lv)
     
         ## load config file and global settings
         c = getConfig(config)
@@ -102,7 +104,7 @@ class ClusterAccounting:
             date = (datetime.date.today() - datetime.timedelta(1)).strftime('%Y%m%d')
 
         self.logger.info('collecting data of jobs submitted on %s' % date)
-        jobs = get_complete_jobs(self.TORQUE_LOG_DIR, date, debug=True)
+        jobs = get_complete_jobs(self.TORQUE_LOG_DIR, date, debug=(self.logger.level == logging.DEBUG) )
         
         for j in filter(lambda x:(x.cwtime and x.cmem and x.cctime), jobs):
 
@@ -132,9 +134,10 @@ class ClusterAccounting:
 
 class ClusterStatistics:
     """metrics collector for cluster statistics"""
-    def __init__(self, config):
+    def __init__(self, config, lv=logging.ERROR):
         
         self.logger = getMyLogger(self.__class__.__name__)
+        self.logger.setLevel(lv)
         
         ## load config file and global settings
         c = getConfig(config)
@@ -182,10 +185,12 @@ class ClusterStatistics:
 
         def _qcat(queue):
             cat = queue
+
             if cat in self.TORQUE_BATCH_QUEUES:
                 cat = 'batch'
-            elif q not in q_cat:
+            elif queue not in q_cat:
                 cat = 'other'
+
             return cat
  
         # static node information
@@ -240,12 +245,12 @@ class ClusterStatistics:
         
 def testClusterMetrics(config):
     """Test function for MetricsRegistry"""
-    m = ClusterStatistics(config)
+    m = ClusterStatistics(config, lv=logging.DEBUG)
     # collection metrics
     m.collectMetrics()
     # write out metrics to file
     m.exportToFile('statistics.prom')
     
-    m = ClusterAccounting(config)
+    m = ClusterAccounting(config, lv=logging.DEBUG)
     m.collectMetrics()
     m.exportToFile('accounting.txt')
