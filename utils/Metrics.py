@@ -45,11 +45,12 @@ class ClusterAccounting:
         ##
         ## key: metric name
         ## value: [ MetricData_1, MetricData_2, ... ]
-        self.registry = {'hpc_wtime_asked': [],
-                         'hpc_wtime_used' : [],
-                         'hpc_mem_asked'  : [],
-                         'hpc_mem_used'   : [],
-                         'hpc_ctime_used' : []}
+        self.registry = {'hpc_acct_wtime_asked': [],
+                         'hpc_acct_wtime_used' : [],
+                         'hpc_acct_mem_asked'  : [],
+                         'hpc_acct_mem_used'   : [],
+                         'hpc_acct_ctime_used' : [],
+                         'hpc_acct_job_count'  : []}
     
     def exportToFile(self, fpath):
         """export metrics in the registry to a file"""
@@ -104,14 +105,20 @@ class ClusterAccounting:
         jobs = get_complete_jobs(self.TORQUE_LOG_DIR, date, debug=True)
         
         for j in filter(lambda x:(x.cwtime and x.cmem and x.cctime), jobs):
-            t = {'gid':str(j.gid), 'uid':str(j.uid), 'jstat':j.jstat, 'jqueue':j.queue}
+
+            # TODO: convert gid to meaninful value?
+            
+            s = interpret_job_ec(j.jec)
+
+            t  = {'gid':str(j.gid), 'uid':str(j.uid), 'jstat':s, 'jqueue':j.queue}
             
             # construct data points for this job
-            data = {'hpc_wtime_asked': MetricData(tags=t, value=j.rwtime),
-                    'hpc_mem_asked'  : MetricData(tags=t, value=j.rmem),
-                    'hpc_wtime_used' : MetricData(tags=t, value=j.cwtime),
-                    'hpc_mem_used'   : MetricData(tags=t, value=j.cmem),
-                    'hpc_ctime_used' : MetricData(tags=t, value=j.cctime)}
+            data = {'hpc_acct_wtime_asked': MetricData(tags=t, value=j.rwtime),
+                    'hpc_acct_mem_asked'  : MetricData(tags=t, value=j.rmem),
+                    'hpc_acct_wtime_used' : MetricData(tags=t, value=j.cwtime),
+                    'hpc_acct_mem_used'   : MetricData(tags=t, value=j.cmem),
+                    'hpc_acct_ctime_used' : MetricData(tags=t, value=j.cctime),
+                    'hpc_acct_job_count'  : MetricData(tags=t, value=1)}
             
             # update registry
             for m,d in data.iteritems():
@@ -157,15 +164,15 @@ class ClusterStatistics:
     def collectMetrics(self):
         
         # metrics for core utilisation
-        g_core_usage = Gauge('hpc_core_usage', 'number of used cores per node per queue', ['host', 'queue'], registry=self.registry)
-        g_core_total = Gauge('hpc_core_total', 'number of total cores per node', ['host'], registry=self.registry)
+        g_core_usage = Gauge('hpc_stat_core_usage', 'number of used cores per node per queue', ['host', 'queue'], registry=self.registry)
+        g_core_total = Gauge('hpc_stat_core_total', 'number of total cores per node', ['host'], registry=self.registry)
         
         # metrics for memory utilisation
-        g_mem_usage  = Gauge('hpc_mem_usage' , 'bytes of used memory per node per queue', ['host', 'queue'], registry=self.registry)
-        g_mem_total  = Gauge('hpc_mem_total' , 'bytes of total memory per node', ['host'], registry=self.registry)
+        g_mem_usage  = Gauge('hpc_stat_mem_usage' , 'bytes of used memory per node per queue', ['host', 'queue'], registry=self.registry)
+        g_mem_total  = Gauge('hpc_stat_mem_total' , 'bytes of total memory per node', ['host'], registry=self.registry)
         
         # metrics for job count per queue, per state
-        g_job_count  = Gauge('hpc_job_count' , 'number of jobs' , ['queue','status'], registry=self.registry)
+        g_job_count  = Gauge('hpc_stat_job_count' , 'number of jobs' , ['queue','status'], registry=self.registry)
 
         jobs = get_qstat_jobs(s_cmd=self.BIN_QSTAT_ALL)
         nodes = get_cluster_node_properties()
@@ -179,7 +186,7 @@ class ClusterStatistics:
                 cat = 'batch'
             elif q not in q_cat:
                 cat = 'other'
-            return cat 
+            return cat
  
         # static node information
         for n in nodes:
