@@ -55,7 +55,11 @@ def getConfig(config_file='config.ini'):
         'TORQUE_BATCH_QUEUES': 'short,medium,long',
         'BIN_QSTAT_ALL'      : 'cluster-qstat',
         'BIN_FSHARE_ALL'     : 'cluster-fairshare',
-        'NOTIFICATION_EMAILS': ''
+        'NOTIFICATION_EMAILS': '',
+        'OPENTSDB_HOST'      : 'opentsdb',
+        'OPENTSDB_PORT'      : '9042',
+        'PROMETHEUS_GW_HOST' : 'gw-prometheus',
+        'PROMETHEUS_GW_PORT' : '9091'
     }
 
     config = ConfigParser.SafeConfigParser(default_cfg)

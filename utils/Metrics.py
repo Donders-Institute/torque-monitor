@@ -43,6 +43,9 @@ class ClusterAccounting:
         self.BIN_FSHARE_ALL      = c.get('TorqueTracker','BIN_FSHARE_ALL')
         self.TORQUE_BATCH_QUEUES = c.get('TorqueTracker','TORQUE_BATCH_QUEUES').split(',')
         
+        self.OPENTSDB_HOST = c.get('MetricsPusher','OPENTSDB_HOST')
+        self.OPENTSDB_PORT = int(c.get('MetricsPusher','OPENTSDB_PORT'))
+        
         ## The registry contains metrics data in the following format
         ##
         ## key: metric name
@@ -63,8 +66,12 @@ class ClusterAccounting:
         f.close()
         return
 
-    def pushToGateway(self, host, **kwargs):
-        port=4242
+    def pushMetrics(self, host=None, **kwargs):
+        
+        if not host:
+            host = self.OPENTSDB_HOST
+        
+        port=self.OPENTSDB_PORT
         qsize=100000
         host_tag=True
         mps=0
@@ -144,6 +151,10 @@ class ClusterStatistics:
         self.BIN_QSTAT_ALL       = c.get('TorqueTracker','BIN_QSTAT_ALL')
         self.BIN_FSHARE_ALL      = c.get('TorqueTracker','BIN_FSHARE_ALL')
         self.TORQUE_BATCH_QUEUES = c.get('TorqueTracker','TORQUE_BATCH_QUEUES').split(',')
+        
+        self.PROMETHEUS_GW_HOST = c.get('MetricsPusher', 'PROMETHEUS_GW_HOST')
+        self.PROMETHEUS_GW_PORT = c.get('MetricsPusher', 'PROMETHEUS_GW_PORT')
+        
         self.registry = CollectorRegistry()
     
     def exportToFile(self, fpath):
@@ -151,8 +162,11 @@ class ClusterStatistics:
         write_to_textfile(fpath, self.registry)
         return
 
-    def pushToGateway(self, endpoint, **kwargs):
+    def pushMetrics(self, endpoint=None, **kwargs):
         """push metrics in the registry to the prometheus gateway"""
+
+        if not endpoint:
+            endpoint = '%s:%s' % (self.PROMETHEUS_GW_HOST, self.PROMETHEUS_GW_PORT)
 
         job = kwargs['job']
         instance = None
