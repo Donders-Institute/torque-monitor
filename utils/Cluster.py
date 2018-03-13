@@ -629,6 +629,7 @@ def get_matlab_license_usage(s_cmd, node_domain_suffix='dccn.nl', debug=False):
 
         u = m.group(1)
         h = '%s.%s' % (m.group(2), node_domain_suffix)
-        licenses.append( Job(jid=i, package=pkg, uid=u) )
+        licenses.append( Job(jid=i, package=pkg, host=h, uid=u) )
+        i += 1
         
     return licenses
