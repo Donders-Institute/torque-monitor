@@ -54,7 +54,7 @@ class ClusterAccounting:
     def exportToFile(self, fpath):
         """export metrics in the registry to a file"""
         f = open(fpath, 'w')
-        for m,d in self.registry:
+        for m,d in self.registry.iteritems():
             for x in d:
                 f.write("%s %s %s\n" % (m, repr(x.tags), x.value))
         f.close()
@@ -98,13 +98,13 @@ class ClusterAccounting:
         """collection metrics"""
 
         if not date:
-            date = datetime.date.today() - datetime.timedelta(1)).strftime('%Y%m%d')
+            date = (datetime.date.today() - datetime.timedelta(1)).strftime('%Y%m%d')
 
         self.logger.info('collecting data of jobs submitted on %s' % date)
-        jobs = get_complete_jobs(self.TORQUE_LOG_DIR, date, debug=False)
+        jobs = get_complete_jobs(self.TORQUE_LOG_DIR, date, debug=True)
         
-        for j in jobs:
-            t = [j.gid, j.uid, j.jstat, j.queue]
+        for j in filter(lambda x:(x.cwtime and x.cmem and x.cctime), jobs):
+            t = {'gid':str(j.gid), 'uid':str(j.uid), 'jstat':j.jstat, 'jqueue':j.queue}
             
             # construct data points for this job
             data = {'hpc_wtime_asked': MetricData(tags=t, value=j.rwtime),
@@ -120,6 +120,8 @@ class ClusterAccounting:
                     self.registry[m][idx].value += d.value
                 except ValueError:
                     self.registry[m].append(d)
+                except:
+                    print m, d
 
 class ClusterStatistics:
     """metrics collector for cluster statistics"""
@@ -237,6 +239,6 @@ def testClusterMetrics(config):
     # write out metrics to file
     m.exportToFile('statistics.prom')
     
-    m = ClusterAccount(config)
+    m = ClusterAccounting(config)
     m.collectMetrics()
     m.exportToFile('accounting.txt')
