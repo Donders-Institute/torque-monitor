@@ -4,12 +4,129 @@ from prometheus_client.core import GaugeMetricFamily
 from prometheus_client import write_to_textfile, push_to_gateway
 from prometheus_client.exposition import basic_auth_handler
 
+import potsdb
+import datetime
+
 from utils.Cluster import *
 from utils.Common  import *
 
-class ClusterMetrics:
+class MetricData:
+    """data object for metric data"""
+    
+    def __init__(self, tags, value):
+        self.value = value
+        self.tags = tags
+        
+    def __str__(self):
+        return pprint.pformat(self.__dict__)
+
+    def __repr__(self):
+        return repr(self.__dict__)
+
+    def __eq__(self, other):
+        if not isinstance(other, MetricData):
+            raise NotImplementedError
+        return self.tags == other.tags  
+
+class ClusterAccounting:
+    """metrics collector for cluster utilisation accounting"""
+    def __init__(self, config):
+        
+        self.logger = getMyLogger(self.__class__.__name__)
+    
+        ## load config file and global settings
+        c = getConfig(config)
+        self.TORQUE_LOG_DIR      = c.get('TorqueTracker','TORQUE_LOG_DIR')
+        self.BIN_QSTAT_ALL       = c.get('TorqueTracker','BIN_QSTAT_ALL')
+        self.BIN_FSHARE_ALL      = c.get('TorqueTracker','BIN_FSHARE_ALL')
+        self.TORQUE_BATCH_QUEUES = c.get('TorqueTracker','TORQUE_BATCH_QUEUES').split(',')
+        
+        ## The registry contains metrics data in the following format
+        ##
+        ## key: metric name
+        ## value: [ MetricData_1, MetricData_2, ... ]
+        self.registry = {'hpc_wtime_asked': [],
+                         'hpc_wtime_used' : [],
+                         'hpc_mem_asked'  : [],
+                         'hpc_mem_used'   : [],
+                         'hpc_ctime_used' : []}
+    
+    def exportToFile(self, fpath):
+        """export metrics in the registry to a file"""
+        f = open(fpath, 'w')
+        for m,d in self.registry:
+            for x in d:
+                f.write("%s %s %s\n" % (m, repr(x.tags), x.value))
+        f.close()
+        return
+
+    def pushToGateway(self, host, **kwargs):
+        port=4242
+        qsize=100000
+        host_tag=True
+        mps=0
+        check_host=True
+
+        for k in kwargs.keys():
+            if k == 'port':
+                port = int(kwargs[k])
+                continue
+            if k == 'qsize':
+                qsize = int(kwargs[k])
+                continue
+            if k == 'host_tag':
+                host_tab = bool(kwargs[k])
+                continue
+            if k == 'mps':
+                mps = int(kwargs[k])
+                continue
+            if k == 'check_host':
+                check_host = bool(kwargs[k])
+                continue
+
+        metrics = potsdb.Client(host, port=port, qsize=qsize, host_tag=host_tag, mps=mps, check_host=check_host)
+        
+        # send data to openTSDB
+        for m,d in self.registry.iteritems():
+            for x in d:
+                metrics.send(m, x.value, x.tags)
+
+        # wait until data are being sent out
+        metrics.wait()
+
+    def collectMetrics(self, date=None):
+        """collection metrics"""
+
+        if not date:
+            date = datetime.date.today() - datetime.timedelta(1)).strftime('%Y%m%d')
+
+        self.logger.info('collecting data of jobs submitted on %s' % date)
+        jobs = get_complete_jobs(self.TORQUE_LOG_DIR, date, debug=False)
+        
+        for j in jobs:
+            t = [j.gid, j.uid, j.jstat, j.queue]
+            
+            # construct data points for this job
+            data = {'hpc_wtime_asked': MetricData(tags=t, value=j.rwtime),
+                    'hpc_mem_asked'  : MetricData(tags=t, value=j.rmem),
+                    'hpc_wtime_used' : MetricData(tags=t, value=j.cwtime),
+                    'hpc_mem_used'   : MetricData(tags=t, value=j.cmem),
+                    'hpc_ctime_used' : MetricData(tags=t, value=j.cctime)}
+            
+            # update registry
+            for m,d in data.iteritems():
+                try:
+                    idx = self.registry[m].index(d)
+                    self.registry[m][idx].value += d.value
+                except ValueError:
+                    self.registry[m].append(d)
+
+class ClusterStatistics:
     """metrics collector for cluster statistics"""
     def __init__(self, config):
+        
+        self.logger = getMyLogger(self.__class__.__name__)
+        
         ## load config file and global settings
         c = getConfig(config)
         self.BIN_QSTAT_ALL       = c.get('TorqueTracker','BIN_QSTAT_ALL')
@@ -22,8 +139,16 @@ class ClusterMetrics:
         write_to_textfile(fpath, self.registry)
         return
 
-    def pushToGateway(self, endpoint, job, instance):
+    def pushToGateway(self, endpoint, **kwargs):
         """push metrics in the registry to the prometheus gateway"""
+
+        job = kwargs['job']
+        instance = None
+        try:
+            instance = kwargs['instance']
+        except:
+            pass
+
         push_to_gateway(endpoint, job=job, instance=instance, registry=self.registry)
         return
     
@@ -106,8 +231,12 @@ class ClusterMetrics:
         
 def testClusterMetrics(config):
     """Test function for MetricsRegistry"""
-    m = ClusterMetrics(config)
+    m = ClusterStatistics(config)
     # collection metrics
     m.collectMetrics()
     # write out metrics to file
-    m.exportToFile('test.prom')
+    m.exportToFile('statistics.prom')
+    
+    m = ClusterAccount(config)
+    m.collectMetrics()
+    m.exportToFile('accounting.txt')
