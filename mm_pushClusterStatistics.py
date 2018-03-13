@@ -1,5 +1,6 @@
 #!/bin/env python
 
+import os
 import sys
 import logging
 
@@ -50,4 +51,4 @@ if __name__ == "__main__":
 
     m = ClusterStatistics(config=args.fconfig, lv=lv)
     m.collectMetrics()
-    m.exportToFile('statistics.rpom')
+    m.pushMetrics()

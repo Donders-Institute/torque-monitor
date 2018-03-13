@@ -168,14 +168,13 @@ class ClusterStatistics:
         if not endpoint:
             endpoint = '%s:%s' % (self.PROMETHEUS_GW_HOST, self.PROMETHEUS_GW_PORT)
 
-        job = kwargs['job']
-        instance = None
+        job = 'hpc_metrics'
         try:
-            instance = kwargs['instance']
+            job = kwargs['job']
         except:
             pass
 
-        push_to_gateway(endpoint, job=job, instance=instance, registry=self.registry)
+        push_to_gateway(endpoint, job=job, registry=self.registry)
         return
     
     def collectMetrics(self):
@@ -251,9 +250,10 @@ class ClusterStatistics:
             g_job_count.labels(queue=_qcat(j.queue), status='running').inc(1)
             
             # update core and memory usage
+            m_chunk = 1.0 * j.rmem * 1000000000 / len(j.node)
             for n in j.node:
                 g_core_usage.labels(queue=_qcat(j.queue), host=n).inc(1)
-                g_mem_usage.labels(queue=_qcat(j.queue), host=n).inc(j.rmem * 1000000000)
+                g_mem_usage.labels(queue=_qcat(j.queue), host=n).inc(m_chunk)
                 
         return
         
