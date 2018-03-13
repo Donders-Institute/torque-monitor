@@ -600,3 +600,35 @@ def get_qstat_jobs(s_cmd, node_domain_suffix='dccn.nl', debug=False):
                 jlist[j.jstat].append(j)
 
     return jlist
+
+def get_matlab_license_usage(s_cmd, node_domain_suffix='dccn.nl', debug=False):
+    """get matlab license usage of DCCN"""
+    
+    licenses = []
+        
+    re_pkg_header = re.compile('^package:\s+(\S+)\s+.*')
+    re_lic = re.compile('^([a-z]+)\s+(\S+)\s+.*')
+
+    s = Shell(debug=False)
+    rc, output, m = s.cmd1(s_cmd, allowed_exit=[0,255], timeout=300)    
+    
+    pkg = None
+    i = 0
+    for l in output.split('\n'):
+        
+        l.strip()
+        m = re_pkg_header.match(l)
+        
+        if m:
+            pkg = m.group(1)
+            continue
+            
+        m = re_lic.match(l)
+        if not m:
+            continue
+
+        u = m.group(1)
+        h = '%s.%s' % (m.group(2), node_domain_suffix)
+        licenses.append( Job(jid=i, package=pkg, uid=u) )
+        
+    return licenses
