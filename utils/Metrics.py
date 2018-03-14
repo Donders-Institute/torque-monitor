@@ -142,9 +142,9 @@ class ClusterAccounting:
                     
 class MatlabLicenseAccounting(ClusterAccounting):
     """metrics collector for matlab license usage"""
-    def __init__(self, config, lvl=logging.ERROR):
+    def __init__(self, config, lv=logging.ERROR):
         
-        ClusterAccounting.__init__(self,config,lvl)
+        ClusterAccounting.__init__(self,config,lv)
         
         ## load config file and global settings
         c = getConfig(config)
