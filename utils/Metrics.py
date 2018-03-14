@@ -14,10 +14,9 @@ from utils.Common  import *
 class MetricData:
     """data object for metric data"""
     
-    def __init__(self, tags, value, ts):
+    def __init__(self, tags, value):
         self.value = value
         self.tags  = tags
-        self.ts    = ts
         
     def __str__(self):
         return pprint.pformat(self.__dict__)
@@ -100,7 +99,7 @@ class ClusterAccounting:
         # send data to openTSDB
         for m,d in self.registry.iteritems():
             for x in d:
-                metrics.send(m, x.value, x.tags)
+                metrics.send(m, x.value, **x.tags)
 
         # wait until data are being sent out
         metrics.wait()
@@ -155,11 +154,11 @@ class MatlabLicenseAccounting(ClusterAccounting):
     def collectMetrics(self, date=None):
         """collection metrics"""
         now = time.time()
-        self.logger.DEBUG('getting matlab license usage ...')
-        licenses = get_matlab_license_usage()
+        self.logger.debug('getting matlab license usage ...')
+        licenses = get_matlab_license_usage(self.BIN_CLUSTER_MATLAB)
         m = 'hpc_acct_matlab_license_usage'
         for l in licenses:
-            d = MetricData(tags={'package': l.package, 'uid':l.uid, 'host':l.host, 'timestamp': now}, value=1)
+            d = MetricData(tags={'package': l.package, 'host':l.host, 'timestamp': now}, value=1)
             try:
                 idx = self.registry[m].index(d)
                 self.registry[m][idx].value += d.value

@@ -52,3 +52,7 @@ if __name__ == "__main__":
     m = ClusterStatistics(config=args.fconfig, lv=lv)
     m.collectMetrics()
     m.pushMetrics()
+
+    m = MatlabLicenseAccounting(config=args.fconfig, lv=lv)
+    m.collectMetrics()
+    m.pushMetrics()

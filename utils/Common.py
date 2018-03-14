@@ -55,6 +55,7 @@ def getConfig(config_file='config.ini'):
         'TORQUE_BATCH_QUEUES': 'short,medium,long',
         'BIN_QSTAT_ALL'      : 'cluster-qstat',
         'BIN_FSHARE_ALL'     : 'cluster-fairshare',
+        'BIN_CLUSTER_MATLAB' : 'cluster-matlab',
         'NOTIFICATION_EMAILS': '',
         'OPENTSDB_HOST'      : 'opentsdb',
         'OPENTSDB_PORT'      : '9042',
