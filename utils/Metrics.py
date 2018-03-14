@@ -14,9 +14,10 @@ from utils.Common  import *
 class MetricData:
     """data object for metric data"""
     
-    def __init__(self, tags, value):
+    def __init__(self, tags, value, ts):
         self.value = value
-        self.tags = tags
+        self.tags  = tags
+        self.ts    = ts
         
     def __str__(self):
         return pprint.pformat(self.__dict__)
@@ -27,7 +28,7 @@ class MetricData:
     def __eq__(self, other):
         if not isinstance(other, MetricData):
             raise NotImplementedError
-        return self.tags == other.tags  
+        return self.tags == other.tags
 
 class ClusterAccounting:
     """metrics collector for cluster utilisation accounting"""
@@ -115,11 +116,12 @@ class ClusterAccounting:
         
         for j in filter(lambda x:(x.cwtime and x.cmem and x.cctime), jobs):
 
-            # TODO: convert gid to meaninful value?
-            
-            s = interpret_job_ec(j.jec)
+            # TODO: make the time resolution configurable, currently it's hardcoded as 1 hour = 3600 seconds
+            ts = long(j.t_finish) - ( long(j.t_finish) % 3600 ) + 1800
 
-            t  = {'gid':str(j.gid), 'uid':str(j.uid), 'jstat':s, 'jqueue':j.queue}
+            # TODO: convert gid to meaninful value?
+            s = interpret_job_ec(j.jec)
+            t  = {'gid':str(j.gid), 'uid':str(j.uid), 'jstat':s, 'jqueue':j.queue, 'timestamp': ts}
             
             # construct data points for this job
             data = {'hpc_acct_wtime_asked': MetricData(tags=t, value=j.rwtime),
@@ -137,7 +139,34 @@ class ClusterAccounting:
                 except ValueError:
                     self.registry[m].append(d)
                 except:
-                    print m, d
+                    pass
+                    
+class MatlabLicenseAccounting(ClusterAccounting):
+    """metrics collector for matlab license usage"""
+    def __init__(self, config, lvl=logging.ERROR):
+        
+        ClusterAccounting.__init__(self,config,lvl)
+        
+        ## load config file and global settings
+        c = getConfig(config)
+        self.BIN_CLUSTER_MATLAB = c.get('TorqueTracker','BIN_CLUSTER_MATLAB')       
+        self.registry = {'hpc_acct_matlab_license_usage':[]}
+        
+    def collectMetrics(self, date=None):
+        """collection metrics"""
+        now = time.time()
+        self.logger.DEBUG('getting matlab license usage ...')
+        licenses = get_matlab_license_usage()
+        m = 'hpc_acct_matlab_license_usage'
+        for l in licenses:
+            d = MetricData(tags={'package': l.package, 'uid':l.uid, 'host':l.host, 'timestamp': now}, value=1)
+            try:
+                idx = self.registry[m].index(d)
+                self.registry[m][idx].value += d.value
+            except ValueError:
+                self.registry[m].append(d)
+            except:
+                pass
 
 class ClusterStatistics:
     """metrics collector for cluster statistics"""
