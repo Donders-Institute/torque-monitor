@@ -465,7 +465,7 @@ def get_cluster_node_properties(debug=False):
                 
             m = re_ngp.match(l)
             if m:
-                n.ngpus = int( re_ngp.group(1) )
+                n.ngpus = int( m.group(1) )
                 continue
 
             if l == '':

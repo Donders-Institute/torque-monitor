@@ -218,7 +218,8 @@ class ClusterStatistics:
             g_gpu_total.labels(host=n.host).set( n.ngpus )
 
             # add extra attribute to match the interactive queue names defined in q_cat
-            n['interact'] = n['interactive']
+            n.__dict__['interact'] = n.__dict__['interactive']
+            n.__dict__['other']    = True
 
             # set default usage metrics to zero
             for q in q_cat:
@@ -246,18 +247,17 @@ class ClusterStatistics:
         for q in q_cat:
             for s in ['queued','held','running']:
                 if s == 'running':
-                    # loop over hosts to set initial value of zero for the 'other' queue
-                    for n in nodes:
-                        g_job_count.labels(queue='other', status=s, host=n.host).set(0)
-                        # loop over hosts to set initial value of zero for accepted queues
-                    for n in filter(lambda x:x[q], nodes):
+                    # loop over hosts to set initial value of zero for accepted queues
+                    for n in filter(lambda x:x.__dict__[q], nodes):
                         g_job_count.labels(queue=q, status=s, host=n.host).set(0)
+                else:
+                    g_job_count.labels(queue=q, status=s, host='na').set(0)
 
         for j in q_jobs:
-            g_job_count.labels(queue=_qcat(j.queue), status='queued').inc(1)
+            g_job_count.labels(queue=_qcat(j.queue), status='queued', host='na').inc(1)
             
         for j in h_jobs:
-            g_job_count.labels(queue=_qcat(j.queue), status='held').inc(1)
+            g_job_count.labels(queue=_qcat(j.queue), status='held', host='na').inc(1)
 
         ## get jobs in running state
         r_jobs = filter(lambda j:j.jstat in ['E','R'], _jobs)
