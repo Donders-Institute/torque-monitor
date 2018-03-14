@@ -181,14 +181,18 @@ class ClusterStatistics:
         
         # metrics for core utilisation
         g_core_usage = Gauge('hpc_stat_core_usage', 'number of used cores per node per queue', ['host', 'queue'], registry=self.registry)
-        g_core_total = Gauge('hpc_stat_core_total', 'number of total cores per node', ['host'], registry=self.registry)
         
         # metrics for memory utilisation
         g_mem_usage  = Gauge('hpc_stat_mem_usage' , 'bytes of used memory per node per queue', ['host', 'queue'], registry=self.registry)
+        
+        # metrics for node specification
+        g_core_total = Gauge('hpc_stat_core_total', 'number of total cores per node', ['host'], registry=self.registry)
         g_mem_total  = Gauge('hpc_stat_mem_total' , 'bytes of total memory per node', ['host'], registry=self.registry)
+        g_network_total = Gauge('hpc_stat_network_total' , 'Gbits of network bandwidth', ['host'], registry=self.registry)
+        g_gpu_total  = Gauge('hpc_stat_gpu_total' , 'number of total gpus per node', ['host'], registry=self.registry)
         
         # metrics for job count per queue, per state
-        g_job_count  = Gauge('hpc_stat_job_count' , 'number of jobs' , ['queue','status'], registry=self.registry)
+        g_job_count  = Gauge('hpc_stat_job_count' , 'number of jobs' , ['queue','status','host'], registry=self.registry)
 
         jobs = get_qstat_jobs(s_cmd=self.BIN_QSTAT_ALL)
         nodes = get_cluster_node_properties()
@@ -210,6 +214,11 @@ class ClusterStatistics:
         for n in nodes:
             g_core_total.labels(host=n.host).set( n.ncores )
             g_mem_total.labels(host=n.host).set( n.mem * 1000000000 )
+            g_network_total.labels(host=n.host).set( int(n.net.replace('network','').replace('GigE','')) )
+            g_gpu_total.labels(host=n.host).set( n.ngpus )
+
+            # add extra attribute to match the interactive queue names defined in q_cat
+            n['interact'] = n['interactive']
 
             # set default usage metrics to zero
             for q in q_cat:
@@ -236,8 +245,14 @@ class ClusterStatistics:
         # set default job count metrics to zero
         for q in q_cat:
             for s in ['queued','held','running']:
-                g_job_count.labels(queue=q, status=s).set(0)
-             
+                if s == 'running':
+                    # loop over hosts to set initial value of zero for the 'other' queue
+                    for n in nodes:
+                        g_job_count.labels(queue='other', status=s, host=n.host).set(0)
+                        # loop over hosts to set initial value of zero for accepted queues
+                    for n in filter(lambda x:x[q], nodes):
+                        g_job_count.labels(queue=q, status=s, host=n.host).set(0)
+
         for j in q_jobs:
             g_job_count.labels(queue=_qcat(j.queue), status='queued').inc(1)
             
@@ -247,7 +262,8 @@ class ClusterStatistics:
         ## get jobs in running state
         r_jobs = filter(lambda j:j.jstat in ['E','R'], _jobs)
         for j in r_jobs:
-            g_job_count.labels(queue=_qcat(j.queue), status='running').inc(1)
+            # job is counted to the leading host (i.e. the first node on the job property)
+            g_job_count.labels(queue=_qcat(j.queue), status='running', host=j.node[0]).inc(1)
             
             # update core and memory usage
             m_chunk = 1.0 * j.rmem * 1000000000 / len(j.node)

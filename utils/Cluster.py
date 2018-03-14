@@ -382,6 +382,7 @@ def get_cluster_node_properties(debug=False):
         re_host = re.compile('^(\S+)$')
         re_stat = re.compile('^\s+state\s+\=\s+(\S+)$')
         re_np   = re.compile('^\s+np\s+\=\s+(\d+)$')
+        re_ngp  = re.compile('^\s+gpus\s+\=\s+(\d+)$')
         re_prop = re.compile('^\s+properties\s+\=\s+(\S+)$')
         re_mem  = re.compile('^ram(\d+)gb$')
         re_net  = re.compile('^network(\S+)$')
@@ -408,6 +409,7 @@ def get_cluster_node_properties(debug=False):
                          mem           = 1,           # memory total
                          memleft       = 1,           # memory left
                          memleft_c     = 1,           # avg. memory left per core
+                         ngpus         = 0,           # number of GPUs
                          net           = '',          # network connectivity
                          interactive   = False,       # node allowing interactive jobs 
                          matlab        = False,       # node allowing matlab batch jobs 
@@ -459,6 +461,11 @@ def get_cluster_node_properties(debug=False):
                 n.vgl         = 'vgl'         in n.props
                 n.batch       = 'batch'       in n.props
 
+                continue
+                
+            m = re_ngp.match(l)
+            if m:
+                n.ngpus = int( re_ngp.group(1) )
                 continue
 
             if l == '':
