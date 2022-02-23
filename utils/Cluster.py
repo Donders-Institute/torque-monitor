@@ -96,6 +96,10 @@ def get_complete_jobs(logdir, date, debug=False):
  
         # read xml string
         xmldoc = xmltodict.parse(temp)
+
+        # sometimes the xml file is empty?? 
+        if not xmldoc['data']:
+           return []
  
         # return list containing subdict for each job
         cjobs = xmldoc['data']['Jobinfo']
