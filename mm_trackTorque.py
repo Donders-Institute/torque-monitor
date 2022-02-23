@@ -154,7 +154,8 @@ def __tab_cnode_status__(nodes):
     for n in nodes:
 
         data = []
-        data.append( '%s' % __mkcolor__( n.host, c_stat[ n.stat ] ) )
+
+        data.append( '%s' % __mkcolor__( n.host, c_stat[ n.stat.split(',')[-1] ] ) )
         data.append( '%-15s (%3.2f)'  % (n.cpu_type,n.cpu_speed) )
         data.append( '%2d Gb'      % int(n.net.replace('GigE','')) )
 
